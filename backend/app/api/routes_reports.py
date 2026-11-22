@@ -72,6 +72,7 @@ async def evaluate_session(session_id: str, db: AsyncSession = Depends(get_db)):
             "pause_before_ms": t.pause_before_ms,
             "word_timestamps": t.word_timestamps_json,
             "turn_eval": t.turn_eval_json,
+            "stt_provider_used": t.stt_provider_used,
         }
         for t in session.turns
     ]

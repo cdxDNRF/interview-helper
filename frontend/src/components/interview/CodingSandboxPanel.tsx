@@ -78,6 +78,33 @@ export function CodingSandboxPanel({
     w.onmessage = (ev: MessageEvent) => {
       const pending = activeRunRef.current;
       if (!pending || ev.data?.id !== pending.id) return;
+
+      if (ev.data?.phase === "loading_runtime") {
+        setOutput("正在首次加载 Pyodide WASM 运行时（约 15MB，随后自动缓存）...");
+        return;
+      }
+
+      if (ev.data?.phase === "executing") {
+        setOutput("Pyodide 运行时已就绪，正在执行 Python 单测（5 秒超时保护）...");
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          createFreshWorker();
+          setRunning(false);
+          const timeoutMsg = "Python 代码执行超时（>5s），已强杀并重置沙箱线程。";
+          setOutput(timeoutMsg);
+          onSnapshotChangeRef.current({
+            language: "python",
+            source_code: pending.codeSnapshotText,
+            tests_passed: false,
+            passed_count: 0,
+            total_count: pending.totalTests,
+            test_output: timeoutMsg,
+            exec_time_ms: 5000,
+          });
+        }, 5000);
+        return;
+      }
+
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setRunning(false);
       const { testsPassed, passedCount, totalCount, output: outText, execTimeMs } = ev.data;
@@ -99,7 +126,7 @@ export function CodingSandboxPanel({
   const handleRunTests = () => {
     if (running) return;
     setRunning(true);
-    setOutput("正在 Pyodide WebWorker 中执行 Python 单测（首次需加载 WASM 运行时）...");
+    setOutput("正在初始化 Pyodide WebWorker...");
 
     const worker = workerRef.current || createFreshWorker();
     const runId = Date.now();
@@ -107,10 +134,12 @@ export function CodingSandboxPanel({
     activeRunRef.current = { id: runId, codeSnapshotText: code, totalTests };
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    // Boot timeout (45s) for cold WASM fetch; replaced by strict 5s timeout once code execution begins
     timeoutRef.current = setTimeout(() => {
       createFreshWorker();
       setRunning(false);
-      const timeoutMsg = "执行超时（>15s），已强杀并重置 Pyodide 沙箱线程。";
+      const timeoutMsg =
+        "Pyodide WASM 运行时加载超时（>45s）。若处于离线环境，可在 .env 配置本地 NEXT_PUBLIC_PYODIDE_INDEX_URL 镜像。";
       setOutput(timeoutMsg);
       onSnapshotChangeRef.current({
         language: "python",
@@ -119,9 +148,9 @@ export function CodingSandboxPanel({
         passed_count: 0,
         total_count: totalTests,
         test_output: timeoutMsg,
-        exec_time_ms: 15000,
+        exec_time_ms: 45000,
       });
-    }, 15000);
+    }, 45000);
 
     worker.postMessage({
       id: runId,

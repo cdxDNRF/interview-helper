@@ -54,7 +54,7 @@ def compute_speech_metrics(turns: list[dict]) -> SpeechMetrics:
         end_ms = int(turn.get("timestamp_end_ms") or 0)
         dur_ms = max(0, end_ms - start_ms)
         is_text_paste_burst = (
-            turn.get("stt_provider_used") == "text" and dur_ms < 2000 and turn_tokens > 15
+            turn.get("stt_provider_used") == "text" and dur_ms < 2000 and turn_tokens >= 10
         )
         if (dur_ms == 0 or is_text_paste_burst) and turn_tokens > 0:
             # Pure-text mode, pasted burst, or missing mic timestamps: estimate ~180 tokens/min

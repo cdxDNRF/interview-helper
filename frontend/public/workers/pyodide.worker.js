@@ -17,10 +17,13 @@ async function ensurePyodide(indexURL) {
 
 self.onmessage = async (event) => {
   const { id, sourceCode, testCasesCode, indexURL } = event.data;
-  const startedAt = performance.now();
 
   try {
+    self.postMessage({ id, phase: "loading_runtime" });
     const pyodide = await ensurePyodide(indexURL);
+
+    self.postMessage({ id, phase: "executing" });
+    const startedAt = performance.now();
     const wrappedScript = `
 import io, sys, traceback
 
@@ -63,6 +66,7 @@ finally:
 
     self.postMessage({
       id,
+      phase: "result",
       ok: true,
       testsPassed: Boolean(passed),
       passedCount: passed ? assertCount : 0,
@@ -73,12 +77,13 @@ finally:
   } catch (err) {
     self.postMessage({
       id,
+      phase: "result",
       ok: false,
       testsPassed: false,
       passedCount: 0,
       totalCount: 1,
       output: `Pyodide 初始化或执行异常: ${err?.message || String(err)}`,
-      execTimeMs: Math.round(performance.now() - startedAt),
+      execTimeMs: 0,
     });
   }
 };

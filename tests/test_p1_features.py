@@ -10,8 +10,20 @@ from app.graph.interview_graph import (
     compute_next_ladder_state,
     initialize_state_snapshot,
 )
-from app.llm.mock_adapter import mock_prep_plan
+from app.llm.mock_adapter import mock_evaluate_turn, mock_prep_plan
 from app.main import app
+
+
+def test_mock_evaluate_ignores_failing_code_snapshot_numbers():
+    rote_with_timeout_snapshot = (
+        "大概就是这样吧，网上说一般用封装好的装饰器，具体没看过源码。\n\n"
+        "[候选人同步提交的代码快照 (python) 与 Pyodide 单测结果]\n"
+        "单测结果: passed=False (0/6, 15000ms)\n"
+        "输出/报错: 执行超时"
+    )
+    res = mock_evaluate_turn("核心模块源码", 1, rote_with_timeout_snapshot)
+    assert res["score"] < 0.65
+    assert res["is_rote_memorization"] is True
 
 
 def test_code_snapshot_preserves_static_prefix():
@@ -154,6 +166,7 @@ async def test_p1_code_mistake_retry_and_observability_e2e(tmp_path):
             rep = (await client.post(f"/api/sessions/{sess['id']}/evaluate")).json()
             assert rep["dimensions"]["code_and_testing"]["score"] is not None
             assert "Pyodide" in rep["dimensions"]["code_and_testing"]["evidence_quotes"][0]["quote"]
+            assert rep["speech_metrics"]["chars_per_min"] <= 250.0
 
             # Mistakes auto-synced
             mistakes = (await client.get("/api/mistakes")).json()

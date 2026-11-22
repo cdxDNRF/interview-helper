@@ -32,7 +32,7 @@ _EVASION_SIGNALS = [
 
 _ROTE_SIGNALS = [
     "八股", "背一下", "概念就是", "一般来说就是", "大概就是这样", "网上说",
-    "书上写", "优点是", "缺点是", "具体没看过", "只是调包", "封装好的",
+    "书上写", "优点是", "缺点是", "具体没看过", "没看过源码", "只是调包", "封装好的",
 ]
 
 
@@ -174,8 +174,12 @@ def mock_prep_plan(
 
 
 def mock_evaluate_turn(topic_title: str, ladder_level: int, user_text: str) -> dict:
-    lower = user_text.lower()
-    char_len = len(user_text.strip())
+    code_marker = "[候选人同步提交的代码快照"
+    spoken_part, _, code_part = user_text.partition(code_marker)
+    lower = spoken_part.lower()
+    char_len = len(spoken_part.strip())
+
+    code_passed_bonus = 0.08 if "passed=True" in code_part else 0.0
 
     evasion_hits = sum(1 for kw in _EVASION_SIGNALS if kw in lower)
     rote_hits = sum(1 for kw in _ROTE_SIGNALS if kw in lower)
@@ -194,7 +198,7 @@ def mock_evaluate_turn(topic_title: str, ladder_level: int, user_text: str) -> d
 
     if rote_hits >= 1 and tech_hits <= 2 and not has_numbers:
         return {
-            "score": 0.48,
+            "score": round(min(0.56, 0.48 + code_passed_bonus), 2),
             "is_rote_memorization": True,
             "is_off_topic": False,
             "covered_points": ["提及了基础概念名称"],
@@ -202,7 +206,13 @@ def mock_evaluate_turn(topic_title: str, ladder_level: int, user_text: str) -> d
             "brief_diagnosis": "回答偏背八股/泛泛而谈，缺少结合自身代码与真实边界的深度论证。",
         }
 
-    base = 0.42 + min(0.32, tech_hits * 0.08) + (0.12 if has_numbers else 0.0) + (0.10 if char_len >= 90 else 0.0)
+    base = (
+        0.42
+        + min(0.32, tech_hits * 0.08)
+        + (0.12 if has_numbers else 0.0)
+        + (0.10 if char_len >= 90 else 0.0)
+        + code_passed_bonus
+    )
     if ladder_level >= 3 and tech_hits < 3 and not has_numbers:
         base = min(base, 0.58)
     score = round(min(0.95, max(0.30, base)), 2)
