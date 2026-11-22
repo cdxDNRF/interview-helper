@@ -99,6 +99,7 @@ PREP_SYSTEM_PROMPT = """你是一位精通前后端/架构/算法与工程落地
    - 如果提供了 GitHub 源码，至少一半考点必须明确绑定具体源码文件/类/函数作为 `source_entrypoint`。
    - 每个考点包含 3 条可客观判定的「二元原子核查清单」（atomic_checklist）。
    - 每个考点包含 1 个聚焦的 `l1_seed_question`（L1 概念原理层开场发问，60 字以内）。
+   - 可选为其中 1 个核心实现考点附带 `coding_challenge`（`title`、`starter_code`、`test_cases_code`，纯 Python 3 标准库且使用 `assert` 校验），供候选人在浏览器 Pyodide 沙箱现场编码自测；不需要编码的考点置为 `null`。
 3. 提取 10~20 个核心技术热词（hotwords）。
 4. 严格只返回合法 JSON 对象（不要输出 Markdown 围栏或额外说明），字段结构如下：
 {

@@ -9,7 +9,7 @@ from app.schemas.evaluation import (
     JudgeLLMOutput,
     TranscriptAnnotation,
 )
-from app.schemas.prep import GapPoint, PrepPlan, PrepTopic
+from app.schemas.prep import CodingChallenge, GapPoint, PrepPlan, PrepTopic
 
 
 _FILE_PATH_RE = re.compile(
@@ -82,6 +82,33 @@ def mock_prep_plan(
                 "是否给出具体一致性兜底或锁/消息队列方案",
             ],
             l1_seed_question=f"{tone_prefix}看到你仓库里的 `{f0}`，先讲讲这个模块的核心设计思路，以及如果多进程部署它的状态该如何同步？",
+            coding_challenge=CodingChallenge(
+                title="实现带容量上限与过期清理的线程安全会话连接注册表",
+                starter_code=(
+                    "import time\n\n"
+                    "class BoundedRegistry:\n"
+                    "    def __init__(self, max_size: int = 2, ttl_sec: float = 5.0):\n"
+                    "        self.max_size = max_size\n"
+                    "        self.ttl_sec = ttl_sec\n"
+                    "        self._items = {}  # key -> (value, expire_at)\n\n"
+                    "    def put(self, key: str, value: str, now: float | None = None) -> bool:\n"
+                    "        # TODO: 清理过期项，超容量且为新 key 时返回 False\n"
+                    "        return False\n\n"
+                    "    def get(self, key: str, now: float | None = None) -> str | None:\n"
+                    "        # TODO: 若过期则惰性删除并返回 None\n"
+                    "        return None\n"
+                ),
+                test_cases_code=(
+                    "reg = BoundedRegistry(max_size=2, ttl_sec=5.0)\n"
+                    "assert reg.put('s1', 'w1', now=0.0) is True\n"
+                    "assert reg.put('s2', 'w2', now=1.0) is True\n"
+                    "assert reg.put('s3', 'w3', now=2.0) is False, '容量上限未拦截'\n"
+                    "assert reg.get('s1', now=6.0) is None, '过期项未失效'\n"
+                    "assert reg.put('s3', 'w3', now=6.0) is True, '清理过期后应允许写入'\n"
+                    "assert reg.get('s3', now=7.0) == 'w3'\n"
+                    "print('ALL_TESTS_PASSED: 6/6')\n"
+                ),
+            ),
         ),
         PrepTopic(
             topic_id="topic_2",
@@ -259,8 +286,10 @@ def mock_judge_report(
     prep_plan: PrepPlan,
     turns: list[dict],
     state_snapshot: dict,
+    code_submissions: list[dict] | None = None,
 ) -> JudgeLLMOutput:
     user_turns = [t for t in turns if t.get("speaker") == "user"]
+    code_subs = code_submissions or []
     quotes: list[EvidenceQuote] = []
     annotations: list[TranscriptAnnotation] = []
 
@@ -268,6 +297,8 @@ def mock_judge_report(
 
     scores_seen: list[float] = []
     tested_dims: set[str] = set()
+    if code_subs:
+        tested_dims.add("code_and_testing")
     for t in user_turns:
         ev = t.get("turn_eval") or {}
         score_val = float(ev.get("score", 0.5))
@@ -372,6 +403,28 @@ def mock_judge_report(
     dim_ps = build_dim("problem_structuring", "问题拆解与表达结构", 1)
     dim_ct = build_dim("code_and_testing", "代码实现与自测意识", -2)
 
+    if code_subs:
+        latest_code = code_subs[-1]
+        passed_all = bool(latest_code.get("tests_passed"))
+        p_cnt = int(latest_code.get("passed_count", 0))
+        t_cnt = int(latest_code.get("total_count", 0))
+        code_snippet = str(latest_code.get("source_code", "")).strip()[:120]
+        code_quote = EvidenceQuote(
+            quote=f"[Pyodide 单测 {p_cnt}/{t_cnt} passed] {code_snippet}",
+            turn_index=int(latest_code.get("turn_index", 1)),
+            timestamp_ms=0,
+            relevance="浏览器 Pyodide 沙箱代码实操与单元测试结果",
+        )
+        dim_ct = DimensionEvaluation(
+            evidence_quotes=[code_quote] + dim_ct.evidence_quotes[:1],
+            reasoning=(
+                f"候选人在浏览器沙箱提交了 {len(code_subs)} 次代码快照，最近一次单测"
+                f"{'全部通过' if passed_all else '存在未通过用例'}（{p_cnt}/{t_cnt}，"
+                f"耗时 {latest_code.get('exec_time_ms', 0)}ms）。"
+            ),
+            score=min(96, max(45, (86 if passed_all else 52) + int((avg_01 - 0.6) * 20))),
+        )
+
     valid_scores = [
         d.score for d in (dim_td, dim_et, dim_ps, dim_ct) if d.score is not None
     ]
@@ -431,3 +484,29 @@ def mock_judge_report(
         ),
         overall_score=overall,
     )
+
+
+def mock_mistake_retry_eval(
+    topic_title: str,
+    atomic_checklist: list[str],
+    retry_answer: str,
+) -> dict:
+    eval_res = mock_evaluate_turn(topic_title, 2, retry_answer)
+    score_100 = round(float(eval_res["score"]) * 100.0, 1)
+    newly_passed = [
+        item
+        for idx, item in enumerate(atomic_checklist)
+        if eval_res["score"] >= 0.65 or (idx == 0 and eval_res["score"] >= 0.55)
+    ]
+    return {
+        "retry_score": score_100,
+        "newly_passed_checklist": newly_passed,
+        "feedback": (
+            f"（离线 Mock 重录评分 {score_100:.1f}）"
+            + (
+                "本次重录补充了具体工程机制与量化约束，已达到掌握标准！"
+                if score_100 >= 75
+                else "比原回答更完整，但仍建议补充具体代码并发粒度、延迟阈值与极端故障降级策略。"
+            )
+        ),
+    }

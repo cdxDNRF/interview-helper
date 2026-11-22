@@ -35,6 +35,23 @@ class CreateSessionRequest(BaseModel):
     interaction_mode: InteractionMode = "voice"
 
 
+class CodeSnapshotPayload(BaseModel):
+    language: str = "python"
+    source_code: str = ""
+    tests_passed: bool = False
+    passed_count: int = 0
+    total_count: int = 0
+    test_output: str = ""
+    exec_time_ms: int = 0
+
+
+class CodeSubmissionItem(CodeSnapshotPayload):
+    id: int
+    turn_index: int
+    topic_index: int
+    created_at: datetime
+
+
 class SubmitTurnRequest(BaseModel):
     content: str = Field(min_length=1)
     timestamp_start_ms: int = 0
@@ -42,6 +59,7 @@ class SubmitTurnRequest(BaseModel):
     pause_before_ms: int = 0
     word_timestamps: list[dict] | None = None
     stt_provider_used: str = "text"
+    code_snapshot: CodeSnapshotPayload | None = None
 
 
 class TurnResponse(BaseModel):
@@ -81,6 +99,7 @@ class SessionDetailResponse(BaseModel):
     state: InterviewStateSnapshot
     telemetry: TelemetrySummary
     turns: list[TurnResponse]
+    code_submissions: list[CodeSubmissionItem] = Field(default_factory=list)
     has_report: bool = False
     started_at: datetime | None = None
     ended_at: datetime | None = None

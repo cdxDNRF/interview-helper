@@ -210,7 +210,7 @@ def build_interview_turn_graph(runtime_cfg: AppRuntimeConfig):
             ],
             response_format={"type": "json_object"},
             temperature=0.1,
-            max_tokens=450,
+            max_tokens=1536,
         )
         try:
             parsed = json.loads(strip_json_fences(call_res.content))

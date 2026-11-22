@@ -83,6 +83,16 @@ class InterviewSession(Base):
     report: Mapped["EvaluationReport | None"] = relationship(
         back_populates="session", cascade="all, delete-orphan", uselist=False
     )
+    code_submissions: Mapped[list["CodeSubmission"]] = relationship(
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="CodeSubmission.id",
+    )
+    mistake_items: Mapped[list["MistakeItem"]] = relationship(
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="MistakeItem.topic_index",
+    )
 
 
 class InterviewTurn(Base):
@@ -151,3 +161,68 @@ class EvaluationReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     session: Mapped["InterviewSession"] = relationship(back_populates="report")
+
+
+class CodeSubmission(Base):
+    __tablename__ = "code_submissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("interview_sessions.id", ondelete="CASCADE"), index=True
+    )
+    turn_index: Mapped[int] = mapped_column(Integer, default=0)
+    topic_index: Mapped[int] = mapped_column(Integer, default=0)
+    language: Mapped[str] = mapped_column(String(32), default="python")
+    source_code: Mapped[str] = mapped_column(Text, default="")
+    tests_passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    passed_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_count: Mapped[int] = mapped_column(Integer, default=0)
+    test_output: Mapped[str] = mapped_column(Text, default="")
+    exec_time_ms: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    session: Mapped["InterviewSession"] = relationship(back_populates="code_submissions")
+
+
+class MistakeItem(Base):
+    __tablename__ = "mistake_items"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("interview_sessions.id", ondelete="CASCADE"), index=True
+    )
+    topic_index: Mapped[int] = mapped_column(Integer, default=0)
+    topic_title: Mapped[str] = mapped_column(String(255), default="")
+    source_entrypoint: Mapped[str] = mapped_column(String(255), default="")
+    question_prompt: Mapped[str] = mapped_column(Text, default="")
+    original_answer: Mapped[str] = mapped_column(Text, default="")
+    original_score: Mapped[float] = mapped_column(Float, default=0.0)
+    best_retry_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    atomic_checklist_json: Mapped[list] = mapped_column(JSON, default=list)
+    ideal_rewrite: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(32), default="open", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    session: Mapped["InterviewSession"] = relationship(back_populates="mistake_items")
+    retries: Mapped[list["MistakeRetry"]] = relationship(
+        back_populates="mistake",
+        cascade="all, delete-orphan",
+        order_by="MistakeRetry.id",
+    )
+
+
+class MistakeRetry(Base):
+    __tablename__ = "mistake_retries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    mistake_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("mistake_items.id", ondelete="CASCADE"), index=True
+    )
+    retry_answer: Mapped[str] = mapped_column(Text, default="")
+    duration_sec: Mapped[int] = mapped_column(Integer, default=0)
+    retry_score: Mapped[float] = mapped_column(Float, default=0.0)
+    newly_passed_checklist_json: Mapped[list] = mapped_column(JSON, default=list)
+    feedback: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    mistake: Mapped["MistakeItem"] = relationship(back_populates="retries")

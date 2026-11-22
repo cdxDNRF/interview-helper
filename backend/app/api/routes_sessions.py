@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db
 from app.db.models import (
+    CodeSubmission,
     InterviewContext,
     InterviewSession,
     InterviewTurn,
@@ -24,6 +25,7 @@ from app.llm.client import LLMCallResult, stream_chat_completion
 from app.llm.mock_adapter import mock_interviewer_reply, mock_stream_text
 from app.llm.prompts import INTERVIEW_TOOLS_DEFINITION, build_static_interview_prefix
 from app.schemas.interview import (
+    CodeSubmissionItem,
     CreateSessionRequest,
     InterviewStateSnapshot,
     SessionDetailResponse,
@@ -79,6 +81,22 @@ def _turn_to_dto(t: InterviewTurn) -> TurnResponse:
     )
 
 
+def _code_to_dto(c: CodeSubmission) -> CodeSubmissionItem:
+    return CodeSubmissionItem(
+        id=c.id,
+        turn_index=c.turn_index,
+        topic_index=c.topic_index,
+        language=c.language,
+        source_code=c.source_code,
+        tests_passed=c.tests_passed,
+        passed_count=c.passed_count,
+        total_count=c.total_count,
+        test_output=c.test_output,
+        exec_time_ms=c.exec_time_ms,
+        created_at=c.created_at,
+    )
+
+
 def _session_to_detail(row: InterviewSession) -> SessionDetailResponse:
     prep = PrepPlan.model_validate(row.prep_plan_json)
     state = InterviewStateSnapshot.model_validate(row.state_snapshot_json)
@@ -93,10 +111,26 @@ def _session_to_detail(row: InterviewSession) -> SessionDetailResponse:
         state=state,
         telemetry=_session_telemetry(row),
         turns=[_turn_to_dto(t) for t in row.turns],
+        code_submissions=[_code_to_dto(c) for c in (row.code_submissions or [])],
         has_report=row.report is not None,
         started_at=row.started_at,
         ended_at=row.ended_at,
         created_at=row.created_at,
+    )
+
+
+async def _load_session_with_relations(
+    db: AsyncSession, session_id: str
+) -> InterviewSession | None:
+    return await db.scalar(
+        select(InterviewSession)
+        .options(
+            selectinload(InterviewSession.context),
+            selectinload(InterviewSession.turns),
+            selectinload(InterviewSession.report),
+            selectinload(InterviewSession.code_submissions),
+        )
+        .where(InterviewSession.id == session_id)
     )
 
 
@@ -193,15 +227,7 @@ async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depen
     )
     await db.commit()
 
-    loaded = await db.scalar(
-        select(InterviewSession)
-        .options(
-            selectinload(InterviewSession.context),
-            selectinload(InterviewSession.turns),
-            selectinload(InterviewSession.report),
-        )
-        .where(InterviewSession.id == session.id)
-    )
+    loaded = await _load_session_with_relations(db, session.id)
     return _session_to_detail(loaded)
 
 
@@ -243,15 +269,7 @@ async def list_sessions(db: AsyncSession = Depends(get_db)):
 
 @router.get("/{session_id}", response_model=SessionDetailResponse)
 async def get_session(session_id: str, db: AsyncSession = Depends(get_db)):
-    row = await db.scalar(
-        select(InterviewSession)
-        .options(
-            selectinload(InterviewSession.context),
-            selectinload(InterviewSession.turns),
-            selectinload(InterviewSession.report),
-        )
-        .where(InterviewSession.id == session_id)
-    )
+    row = await _load_session_with_relations(db, session_id)
     if not row:
         raise HTTPException(status_code=404, detail="面试场次不存在")
     return _session_to_detail(row)
@@ -269,15 +287,7 @@ async def delete_session(session_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.post("/{session_id}/finish", response_model=SessionDetailResponse)
 async def finish_session(session_id: str, db: AsyncSession = Depends(get_db)):
-    row = await db.scalar(
-        select(InterviewSession)
-        .options(
-            selectinload(InterviewSession.context),
-            selectinload(InterviewSession.turns),
-            selectinload(InterviewSession.report),
-        )
-        .where(InterviewSession.id == session_id)
-    )
+    row = await _load_session_with_relations(db, session_id)
     if not row:
         raise HTTPException(status_code=404, detail="面试场次不存在")
     snap = InterviewStateSnapshot.model_validate(row.state_snapshot_json)
@@ -339,6 +349,31 @@ async def submit_turn_stream(
     db.add(user_turn)
     await db.flush()
 
+    effective_user_message = payload.content.strip()
+    if payload.code_snapshot is not None and payload.code_snapshot.source_code.strip():
+        cs = payload.code_snapshot
+        db.add(
+            CodeSubmission(
+                session_id=session.id,
+                turn_index=next_turn_idx,
+                topic_index=curr_state.current_topic_idx,
+                language=cs.language,
+                source_code=cs.source_code,
+                tests_passed=cs.tests_passed,
+                passed_count=cs.passed_count,
+                total_count=cs.total_count,
+                test_output=cs.test_output,
+                exec_time_ms=cs.exec_time_ms,
+            )
+        )
+        effective_user_message = (
+            f"{effective_user_message}\n\n"
+            f"[候选人同步提交的代码快照 ({cs.language}) 与 Pyodide 单测结果]\n"
+            f"单测结果: passed={cs.tests_passed} ({cs.passed_count}/{cs.total_count}, {cs.exec_time_ms}ms)\n"
+            f"```python\n{cs.source_code[:3000]}\n```\n"
+            f"输出/报错: {cs.test_output[:600]}"
+        )
+
     async def event_stream() -> AsyncGenerator[str, None]:
         try:
             graph = build_interview_turn_graph(cfg)
@@ -352,7 +387,7 @@ async def submit_turn_stream(
                     "prep_plan": prep_plan,
                     "state_snapshot": curr_state,
                     "history_messages": history_messages,
-                    "latest_user_message": payload.content.strip(),
+                    "latest_user_message": effective_user_message,
                     "mock_mode": cfg.mock_mode,
                 }
             )

@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes_contexts import router as contexts_router
+from app.api.routes_mistakes import router as mistakes_router
+from app.api.routes_observability import router as observability_router
 from app.api.routes_reports import router as reports_router
 from app.api.routes_sessions import router as sessions_router
 from app.api.routes_settings import router as settings_router
@@ -42,6 +44,8 @@ app.include_router(contexts_router)
 app.include_router(sessions_router)
 app.include_router(voice_router)
 app.include_router(reports_router)
+app.include_router(mistakes_router)
+app.include_router(observability_router)
 
 
 @app.get("/health")

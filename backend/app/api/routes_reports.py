@@ -15,6 +15,7 @@ from app.schemas.evaluation import (
 )
 from app.schemas.prep import PrepPlan
 from app.services.judge_service import run_post_interview_judge
+from app.services.mistake_service import sync_mistakes_from_evaluation
 from app.services.settings_service import get_runtime_config
 from app.services.speech_metrics import compute_speech_metrics
 
@@ -50,6 +51,7 @@ async def evaluate_session(session_id: str, db: AsyncSession = Depends(get_db)):
             selectinload(InterviewSession.context),
             selectinload(InterviewSession.turns),
             selectinload(InterviewSession.report),
+            selectinload(InterviewSession.code_submissions),
         )
         .where(InterviewSession.id == session_id)
     )
@@ -76,6 +78,20 @@ async def evaluate_session(session_id: str, db: AsyncSession = Depends(get_db)):
 
     speech_metrics = compute_speech_metrics(turns_dicts)
 
+    code_subs_dicts = [
+        {
+            "turn_index": c.turn_index,
+            "topic_index": c.topic_index,
+            "source_code": c.source_code,
+            "tests_passed": c.tests_passed,
+            "passed_count": c.passed_count,
+            "total_count": c.total_count,
+            "test_output": c.test_output,
+            "exec_time_ms": c.exec_time_ms,
+        }
+        for c in (session.code_submissions or [])
+    ]
+
     try:
         outcome = await run_post_interview_judge(
             cfg,
@@ -84,6 +100,7 @@ async def evaluate_session(session_id: str, db: AsyncSession = Depends(get_db)):
             state_snapshot=session.state_snapshot_json or {},
             resume_markdown=session.context.resume_markdown,
             job_description=session.context.job_description,
+            code_submissions=code_subs_dicts,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"赛后裁判评估失败: {exc}") from exc
@@ -128,6 +145,10 @@ async def evaluate_session(session_id: str, db: AsyncSession = Depends(get_db)):
     rep.summary_markdown = outcome.report.summary_markdown
     rep.raw_retry_count = outcome.retry_count
     session.status = "evaluated"
+
+    await sync_mistakes_from_evaluation(
+        db, session, prep_plan, outcome.report, turns_dicts
+    )
 
     await db.commit()
     await db.refresh(rep)

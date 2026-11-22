@@ -26,11 +26,14 @@ async def run_post_interview_judge(
     state_snapshot: dict,
     resume_markdown: str,
     job_description: str,
+    code_submissions: list[dict] | None = None,
     *,
     force_mock: bool = False,
 ) -> JudgeEvaluationOutcome:
     if force_mock or runtime_cfg.mock_mode:
-        report = mock_judge_report(prep_plan, turns, state_snapshot)
+        report = mock_judge_report(
+            prep_plan, turns, state_snapshot, code_submissions=code_submissions
+        )
         return JudgeEvaluationOutcome(
             report=report,
             model_used="mock-judge-v1",
@@ -47,13 +50,26 @@ async def run_post_interview_judge(
             f"pause={t.get('pause_before_ms')}ms] {speaker_label}: {t.get('content')}"
         )
 
+    code_block = ""
+    if code_submissions:
+        code_lines = []
+        for idx, c in enumerate(code_submissions):
+            code_lines.append(
+                f"--- Snapshot #{idx + 1} (Turn {c.get('turn_index')}, "
+                f"passed={c.get('tests_passed')}, {c.get('passed_count')}/{c.get('total_count')}, "
+                f"{c.get('exec_time_ms')}ms) ---\n"
+                f"```python\n{str(c.get('source_code', ''))[:2500]}\n```\n"
+                f"单测输出: {str(c.get('test_output', ''))[:500]}"
+            )
+        code_block = "\n\n### 浏览器 Pyodide 代码与单元测试记录\n" + "\n".join(code_lines)
+
     user_payload = (
         f"### 目标岗位 JD\n{job_description[:3000]}\n\n"
         f"### 简历摘要\n{resume_markdown[:3000]}\n\n"
         f"### 冻结的 Prep 题纲与原子核查清单\n"
         f"{json.dumps(prep_plan.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"
         f"### 状态机终态快照\n{json.dumps(state_snapshot, ensure_ascii=False)}\n\n"
-        f"### 完整面试逐字稿\n" + "\n".join(transcript_lines)
+        f"### 完整面试逐字稿\n" + "\n".join(transcript_lines) + code_block
     )
 
     messages: list[dict] = [
