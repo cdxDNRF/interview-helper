@@ -1,0 +1,45 @@
+{
+  "name": "04_zh_en_code_mixed",
+  "description": "中英混说技术表达：校验语速混合分词与技术热词保留",
+  "interviewer_style": "gentle",
+  "prep_plan": {
+    "candidate_summary": "双语技术表达候选人",
+    "resume_jd_gaps": [],
+    "topics": [
+      {
+        "topic_id": "topic_1",
+        "title": "Prompt Caching 与 LangGraph 状态流转",
+        "source_entrypoint": "backend/app/graph/interview_graph.py",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs", "problem_structuring", "code_and_testing"],
+        "atomic_checklist": [
+          "是否阐明 Prompt Caching 静态前缀不可变约束",
+          "是否说明 LangGraph 条件边确定性迁移规则"
+        ],
+        "l1_seed_question": "说说你们在 LangGraph 里怎么保住 Prompt Caching 命中率？"
+      }
+    ],
+    "hotwords": ["PromptCaching", "LangGraph", "FastAPI", "SHA256", "StateGraph"]
+  },
+  "turns": [
+    {
+      "turn_index": 0,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "ai",
+      "content": "说说你们在 LangGraph 里怎么保住 Prompt Caching 命中率？",
+      "timestamp_start_ms": 0,
+      "timestamp_end_ms": 2000,
+      "pause_before_ms": 0
+    },
+    {
+      "turn_index": 1,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "我们在 FastAPI + LangGraph pipeline 里把 system persona 和 sorted tools JSON 以及 Repomix AST digest 锁在 prefix 头部，绝不放 timestamp 或 UUID，命中率从 10% 提到 88%，单场 latency 降了 40ms。",
+      "timestamp_start_ms": 3000,
+      "timestamp_end_ms": 23000,
+      "pause_before_ms": 1000
+    }
+  ]
+}

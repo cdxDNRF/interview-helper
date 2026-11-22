@@ -1,0 +1,64 @@
+{
+  "name": "03_off_topic_evasion",
+  "description": "答非所问与提前中断：存在大量未考察维度（应诚实输出 null）",
+  "interviewer_style": "gentle",
+  "prep_plan": {
+    "candidate_summary": "候选人回避技术追问",
+    "resume_jd_gaps": [],
+    "topics": [
+      {
+        "topic_id": "topic_1",
+        "title": "异步任务队列背压设计",
+        "source_entrypoint": "worker/queue.py",
+        "target_dimensions": ["technical_depth"],
+        "atomic_checklist": [
+          "是否说明任务积压时消费者限流或死信队列方案"
+        ],
+        "l1_seed_question": "说说任务积压时你怎么处理背压和死信？"
+      },
+      {
+        "topic_id": "topic_2",
+        "title": "单测覆盖与故障注入",
+        "source_entrypoint": "tests/test_worker.py",
+        "target_dimensions": ["code_and_testing"],
+        "atomic_checklist": [
+          "是否说明超时重试测试方式"
+        ],
+        "l1_seed_question": "你怎么测试异步任务超时重试？"
+      }
+    ],
+    "hotwords": ["asyncio", "Worker", "DLQ"]
+  },
+  "turns": [
+    {
+      "turn_index": 0,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "ai",
+      "content": "说说任务积压时你怎么处理背压和死信？",
+      "timestamp_start_ms": 0,
+      "timestamp_end_ms": 2000,
+      "pause_before_ms": 0
+    },
+    {
+      "turn_index": 1,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "呃这个我不太懂，忘了具体细节，今天天气挺好的，要不换一题吧。",
+      "timestamp_start_ms": 5000,
+      "timestamp_end_ms": 11000,
+      "pause_before_ms": 3000
+    },
+    {
+      "turn_index": 2,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "那个，其实我没做过队列这块，答不上来，跳过吧。",
+      "timestamp_start_ms": 14000,
+      "timestamp_end_ms": 19000,
+      "pause_before_ms": 3000
+    }
+  ]
+}

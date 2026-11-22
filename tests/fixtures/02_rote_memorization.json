@@ -1,0 +1,71 @@
+{
+  "name": "02_rote_memorization",
+  "description": "背八股敷衍：泛泛概念背诵、无具体项目实现与量化权衡",
+  "interviewer_style": "pressure",
+  "prep_plan": {
+    "candidate_summary": "候选人偏向概念复述",
+    "resume_jd_gaps": [
+      {
+        "area": "缺少实战细节",
+        "observation": "需核验是否真正动手实现过并发控制与缓存",
+        "risk_level": "high"
+      }
+    ],
+    "topics": [
+      {
+        "topic_id": "topic_1",
+        "title": "分布式缓存一致性与雪崩防护",
+        "source_entrypoint": "src/cache/store.py",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否给出具体缓存穿透布隆过滤器参数或兜底锁",
+          "是否结合项目真实代码解释双写一致性延迟窗口"
+        ],
+        "l1_seed_question": "说说你在项目里怎么防缓存穿透、击穿和雪崩？"
+      },
+      {
+        "topic_id": "topic_2",
+        "title": "SQLite 事务与异常恢复",
+        "source_entrypoint": "src/db/engine.py",
+        "target_dimensions": ["code_and_testing"],
+        "atomic_checklist": [
+          "是否说明 WAL checkpoint 与死锁重试策略"
+        ],
+        "l1_seed_question": "说说你对 SQLite 事务隔离级别的理解。"
+      }
+    ],
+    "hotwords": ["Redis", "SQLite", "WAL"]
+  },
+  "turns": [
+    {
+      "turn_index": 0,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "ai",
+      "content": "说说你在项目里怎么防缓存穿透、击穿和雪崩？",
+      "timestamp_start_ms": 0,
+      "timestamp_end_ms": 2000,
+      "pause_before_ms": 0
+    },
+    {
+      "turn_index": 1,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "概念就是缓存穿透用布隆过滤器，击穿用互斥锁，雪崩就是过期时间加随机值，一般来说就是背一下这些八股，网上说优点是简单，缺点是会有不一致，具体没看过框架底层怎么实现的。",
+      "timestamp_start_ms": 4000,
+      "timestamp_end_ms": 17000,
+      "pause_before_ms": 2000
+    },
+    {
+      "turn_index": 2,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "大概就是这样吧，我们项目里只是调包用别人封装好的缓存装饰器，书上写的一般都是先更新数据库再删缓存，细节我也没测过。",
+      "timestamp_start_ms": 20000,
+      "timestamp_end_ms": 32000,
+      "pause_before_ms": 1800
+    }
+  ]
+}

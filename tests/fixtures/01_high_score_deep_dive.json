@@ -1,0 +1,93 @@
+{
+  "name": "01_high_score_deep_dive",
+  "description": "高分深度答辩：L1->L4 逐层打通，具体代码/并发/量化指标齐备",
+  "interviewer_style": "pressure",
+  "prep_plan": {
+    "candidate_summary": "后端工程师候选人，熟悉高并发连接管理与持久化",
+    "resume_jd_gaps": [
+      {
+        "area": "分布式会话同步",
+        "observation": "需核验单机内存连接池如何平滑迁移到多实例架构",
+        "risk_level": "medium"
+      }
+    ],
+    "topics": [
+      {
+        "topic_id": "topic_1",
+        "title": "WebSocket 连接状态同步与背压控制",
+        "source_entrypoint": "backend/ws_manager.py:ConnectionManager",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs", "code_and_testing"],
+        "atomic_checklist": [
+          "是否指出单进程内存字典无法跨 worker 共享连接状态",
+          "是否给出 Redis Pub/Sub 或一致性路由同步方案及延迟指标",
+          "是否说明背压队列溢出与断连重连幂等边界"
+        ],
+        "l1_seed_question": "说说 ws_manager.py 在多进程部署下的状态同步方案。"
+      },
+      {
+        "topic_id": "topic_2",
+        "title": "SQLite WAL 并发锁与降级策略",
+        "source_entrypoint": "backend/db/engine.py",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否阐明 WAL 读写并发原理与 busy_timeout 作用",
+          "是否给出压测 QPS 与分库迁移阈值"
+        ],
+        "l1_seed_question": "讲讲 SQLite WAL 模式的并发写入边界。"
+      }
+    ],
+    "hotwords": ["WebSocket", "Redis", "Pub/Sub", "SQLite", "WAL", "P99", "CAS"]
+  },
+  "turns": [
+    {
+      "turn_index": 0,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "ai",
+      "content": "说说 ws_manager.py 在多进程部署下的状态同步方案。",
+      "timestamp_start_ms": 0,
+      "timestamp_end_ms": 2500,
+      "pause_before_ms": 0
+    },
+    {
+      "turn_index": 1,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "在 ws_manager.py 里单进程原本用内存字典存连接池，多进程下不同 worker 看不到彼此的 socket，所以必须把路由状态抽离到 Redis Pub/Sub 并配合连接心跳 TTL。",
+      "timestamp_start_ms": 3500,
+      "timestamp_end_ms": 18500,
+      "pause_before_ms": 1000
+    },
+    {
+      "turn_index": 2,
+      "topic_index": 0,
+      "ladder_level": 2,
+      "speaker": "user",
+      "content": "我们在实战中按 5000 并发压测时，引入 Redis Pub/Sub 后 P99 转发延迟保持在 12ms 以内，同时对每个会话加了单调递增版本号做 CAS 防乱序。",
+      "timestamp_start_ms": 21000,
+      "timestamp_end_ms": 39000,
+      "pause_before_ms": 1200
+    },
+    {
+      "turn_index": 3,
+      "topic_index": 0,
+      "ladder_level": 3,
+      "speaker": "user",
+      "content": "底层实现上每个连接维护一个有界异步队列 asyncio.Queue(maxsize=256) 做背压，消费协程加锁粒度只锁 session_id 维度避免全局锁死锁，断连重连带幂等 seq_id 去重。",
+      "timestamp_start_ms": 42000,
+      "timestamp_end_ms": 62000,
+      "pause_before_ms": 1100
+    },
+    {
+      "turn_index": 4,
+      "topic_index": 0,
+      "ladder_level": 4,
+      "speaker": "user",
+      "content": "如果突发 10 倍流量加 Redis 抖动超时，我们会触发熔断降级：超时阈值 200ms、队列满后丢弃非关键心跳帧保核心指令，并通过单元测试覆盖网络分区重连竞态。",
+      "timestamp_start_ms": 65000,
+      "timestamp_end_ms": 86000,
+      "pause_before_ms": 1400
+    }
+  ]
+}

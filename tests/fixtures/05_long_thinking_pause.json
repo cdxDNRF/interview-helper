@@ -1,0 +1,49 @@
+{
+  "name": "05_long_thinking_pause",
+  "description": "思考长停顿与高填充词样本：校验确定性冷场停顿秒数与填充词频次统计",
+  "interviewer_style": "gentle",
+  "prep_plan": {
+    "candidate_summary": "思考节奏偏慢、伴随口头禅候选人",
+    "resume_jd_gaps": [],
+    "topics": [
+      {
+        "topic_id": "topic_1",
+        "title": "系统故障排查与重试退避",
+        "source_entrypoint": "backend/app/llm/client.py",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs", "technical_depth", "code_and_testing"],
+        "atomic_checklist": [
+          "是否提及指数退避重试与 429 限流处理"
+        ],
+        "l1_seed_question": "遇到上游模型网关 429 限流你怎么处理？"
+      }
+    ],
+    "hotwords": ["HTTP429", "Backoff", "httpx"]
+  },
+  "turns": [
+    {
+      "turn_index": 0,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "ai",
+      "content": "遇到上游模型网关 429 限流你怎么处理？",
+      "timestamp_start_ms": 0,
+      "timestamp_end_ms": 2000,
+      "pause_before_ms": 0
+    },
+    {
+      "turn_index": 1,
+      "topic_index": 0,
+      "ladder_level": 1,
+      "speaker": "user",
+      "content": "然后，那个，就是说我们当时遇到 429 限流，um，其实的话主要是做了指数退避重试，呃，大概等 1.5 秒到 3 秒。",
+      "timestamp_start_ms": 6800,
+      "timestamp_end_ms": 22800,
+      "pause_before_ms": 4800,
+      "word_timestamps": [
+        {"word": "然后", "start_ms": 6800, "end_ms": 7200},
+        {"word": "那个", "start_ms": 12400, "end_ms": 12900},
+        {"word": "指数退避", "start_ms": 18000, "end_ms": 19000}
+      ]
+    }
+  ]
+}
