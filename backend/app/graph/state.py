@@ -6,6 +6,7 @@ from app.schemas.prep import PrepPlan
 
 class LiveTurnGraphState(TypedDict, total=False):
     session_id: str
+    interview_type: str
     interviewer_style: str
     resume_markdown: str
     job_description: str

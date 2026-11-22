@@ -27,12 +27,17 @@ async def run_post_interview_judge(
     resume_markdown: str,
     job_description: str,
     code_submissions: list[dict] | None = None,
+    interview_type: str = "project_deep_dive",
     *,
     force_mock: bool = False,
 ) -> JudgeEvaluationOutcome:
     if force_mock or runtime_cfg.mock_mode:
         report = mock_judge_report(
-            prep_plan, turns, state_snapshot, code_submissions=code_submissions
+            prep_plan,
+            turns,
+            state_snapshot,
+            code_submissions=code_submissions,
+            interview_type=interview_type,
         )
         return JudgeEvaluationOutcome(
             report=report,
@@ -64,7 +69,8 @@ async def run_post_interview_judge(
         code_block = "\n\n### 浏览器 Pyodide 代码与单元测试记录\n" + "\n".join(code_lines)
 
     user_payload = (
-        f"### 目标岗位 JD\n{job_description[:3000]}\n\n"
+        f"### 面试模式\n{interview_type}\n\n"
+        f"### 目标岗位 JD / 考核范围\n{job_description[:3000]}\n\n"
         f"### 简历摘要\n{resume_markdown[:3000]}\n\n"
         f"### 冻结的 Prep 题纲与原子核查清单\n"
         f"{json.dumps(prep_plan.model_dump(mode='json'), ensure_ascii=False, indent=2)}\n\n"

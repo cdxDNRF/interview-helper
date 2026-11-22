@@ -34,6 +34,9 @@ class InterviewContext(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     title: Mapped[str] = mapped_column(String(200), default="未命名面试准备")
+    interview_type: Mapped[str] = mapped_column(String(32), default="project_deep_dive")
+    role_track_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    knowledge_pack_ids_json: Mapped[list] = mapped_column(JSON, default=list)
     resume_filename: Mapped[str] = mapped_column(String(255), default="")
     resume_markdown: Mapped[str] = mapped_column(Text, default="")
     job_description: Mapped[str] = mapped_column(Text, default="")

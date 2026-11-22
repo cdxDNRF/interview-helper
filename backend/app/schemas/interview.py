@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, Field
 
+from app.packs.schemas import InterviewType
 from app.schemas.prep import PrepPlan
 
 
@@ -92,6 +93,9 @@ class SessionDetailResponse(BaseModel):
     id: str
     context_id: str
     context_title: str
+    interview_type: InterviewType = "project_deep_dive"
+    role_track_id: str | None = None
+    knowledge_pack_ids: list[str] = Field(default_factory=list)
     interviewer_style: InterviewerStyle
     interaction_mode: InteractionMode
     status: str
@@ -110,6 +114,8 @@ class SessionListItem(BaseModel):
     id: str
     context_id: str
     context_title: str
+    interview_type: InterviewType = "project_deep_dive"
+    role_track_id: str | None = None
     interviewer_style: InterviewerStyle
     interaction_mode: InteractionMode
     status: str

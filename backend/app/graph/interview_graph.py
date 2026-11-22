@@ -134,6 +134,7 @@ def build_interviewer_messages(
     next_state: InterviewStateSnapshot,
     eval_action: str,
     eval_result: dict[str, Any],
+    interview_type: str = "project_deep_dive",
 ) -> tuple[list[dict[str, str]], str]:
     """
     构造严格遵守静态前缀缓存铁律的完整 messages 列表：
@@ -148,6 +149,7 @@ def build_interviewer_messages(
         repo_digest_markdown=repo_digest_markdown,
         prep_plan=prep_plan,
         tools=INTERVIEW_TOOLS_DEFINITION,
+        interview_type=interview_type,
     )
 
     topic_idx = min(next_state.current_topic_idx, len(prep_plan.topics) - 1)
@@ -185,7 +187,12 @@ def build_interview_turn_graph(runtime_cfg: AppRuntimeConfig):
         user_msg = state["latest_user_message"]
 
         if state.get("mock_mode") or runtime_cfg.mock_mode:
-            eval_res = mock_evaluate_turn(topic.title, snap.ladder_level, user_msg)
+            eval_res = mock_evaluate_turn(
+                topic.title,
+                snap.ladder_level,
+                user_msg,
+                interview_type=state.get("interview_type", "project_deep_dive"),
+            )
             return {"eval_result": eval_res, "eval_usage": None}
 
         last_ai_q = ""
@@ -248,6 +255,7 @@ def build_interview_turn_graph(runtime_cfg: AppRuntimeConfig):
             next_state=state["next_state"],
             eval_action=state["eval_action"],
             eval_result=state["eval_result"],
+            interview_type=state.get("interview_type", "project_deep_dive"),
         )
         return {"interviewer_messages": messages, "static_prefix_sha256": sha}
 
@@ -264,6 +272,7 @@ def build_interview_turn_graph(runtime_cfg: AppRuntimeConfig):
                 next_ladder_level=next_state.ladder_level,
                 next_seed_question=topic.l1_seed_question,
                 eval_result=state["eval_result"],
+                interview_type=state.get("interview_type", "project_deep_dive"),
             )
             return {"interviewer_reply": reply, "reply_usage": None}
 

@@ -1,6 +1,7 @@
 import re
 from typing import AsyncGenerator
 
+from app.packs.registry import collect_seed_topics_and_hotwords
 from app.schemas.evaluation import (
     ChecklistOutcome,
     DimensionEvaluation,
@@ -35,6 +36,11 @@ _ROTE_SIGNALS = [
     "书上写", "优点是", "缺点是", "具体没看过", "没看过源码", "只是调包", "封装好的",
 ]
 
+_BEHAVIORAL_SIGNALS = [
+    "背景", "约束", "冲突", "分歧", "我负责", "我决定", "推动", "对齐",
+    "复盘", "机制", "止血", "沟通", "优先级", "数据", "降级", "结果",
+]
+
 
 def _extract_repo_files(repo_digest: str) -> list[str]:
     found: list[str] = []
@@ -51,7 +57,72 @@ def mock_prep_plan(
     job_description: str,
     repo_digest_markdown: str,
     interviewer_style: str,
+    interview_type: str = "project_deep_dive",
+    role_track_id: str | None = None,
+    knowledge_pack_ids: list[str] | None = None,
 ) -> PrepPlan:
+    if interview_type != "project_deep_dive":
+        desc, seeds, preset_hotwords = collect_seed_topics_and_hotwords(
+            interview_type, role_track_id, knowledge_pack_ids
+        )
+        topics = [
+            PrepTopic(
+                topic_id=s.topic_id,
+                title=s.title,
+                source_entrypoint=s.source_entrypoint,
+                target_dimensions=list(s.target_dimensions),
+                atomic_checklist=list(s.atomic_checklist),
+                l1_seed_question=s.l1_seed_question,
+                coding_challenge=s.coding_challenge,
+            )
+            for s in seeds[:5]
+        ]
+        if topics:
+            gap_by_mode = {
+                "general_behavioral": [
+                    GapPoint(
+                        area="STAR 个人行动边界",
+                        observation="避免笼统说“我们做了”，重点核查你个人的独立判断与取舍依据。",
+                        risk_level="high",
+                    ),
+                    GapPoint(
+                        area="冲突协调与量化结果",
+                        observation="关注跨团队分歧时的数据论证与上线后真实可验证改进指标。",
+                        risk_level="medium",
+                    ),
+                ],
+                "bagu_fundamentals": [
+                    GapPoint(
+                        area="八股防死记硬背核查",
+                        observation="拒绝照本宣科定义，需深入到数据结构、协议状态变迁与真实踩坑。",
+                        risk_level="high",
+                    ),
+                    GapPoint(
+                        area="极端故障与边界迁移",
+                        observation="考察高并发抖动、锁竞争或内存/网络异常时的工程兜底。",
+                        risk_level="medium",
+                    ),
+                ],
+                "cs_role_track": [
+                    GapPoint(
+                        area="岗位核心工程深度",
+                        observation="结合目标岗位高频考纲核验架构取舍、并发边界与实操落地能力。",
+                        risk_level="high",
+                    ),
+                    GapPoint(
+                        area="边界自测与排障思维",
+                        observation="重点排查对监控指标异常与线上瓶颈的分层定位逻辑。",
+                        risk_level="medium",
+                    ),
+                ],
+            }
+            return PrepPlan(
+                candidate_summary=f"（离线 Mock 预规划）{desc.splitlines()[0][:80]}",
+                resume_jd_gaps=gap_by_mode.get(interview_type, []),
+                topics=topics,
+                hotwords=preset_hotwords[:20],
+            )
+
     repo_files = _extract_repo_files(repo_digest_markdown)
     f0 = repo_files[0] if len(repo_files) > 0 else "src/service/ws_manager.py"
     f1 = repo_files[1] if len(repo_files) > 1 else "src/db/session_store.py"
@@ -173,7 +244,12 @@ def mock_prep_plan(
     )
 
 
-def mock_evaluate_turn(topic_title: str, ladder_level: int, user_text: str) -> dict:
+def mock_evaluate_turn(
+    topic_title: str,
+    ladder_level: int,
+    user_text: str,
+    interview_type: str = "project_deep_dive",
+) -> dict:
     code_marker = "[候选人同步提交的代码快照"
     spoken_part, _, code_part = user_text.partition(code_marker)
     lower = spoken_part.lower()
@@ -183,8 +259,13 @@ def mock_evaluate_turn(topic_title: str, ladder_level: int, user_text: str) -> d
 
     evasion_hits = sum(1 for kw in _EVASION_SIGNALS if kw in lower)
     rote_hits = sum(1 for kw in _ROTE_SIGNALS if kw in lower)
-    tech_hits = sum(1 for kw in _TECHNICAL_SIGNALS if kw in lower)
-    has_numbers = bool(re.search(r"\d+(?:\.\d+)?\s*(?:ms|s|秒|%|qps|tps|mb|kb|万|千|倍|次)", lower))
+    signal_pool = (
+        _BEHAVIORAL_SIGNALS
+        if interview_type == "general_behavioral"
+        else _TECHNICAL_SIGNALS
+    )
+    tech_hits = sum(1 for kw in signal_pool if kw in lower)
+    has_numbers = bool(re.search(r"\d+(?:\.\d+)?\s*(?:ms|s|秒|%|qps|tps|mb|kb|万|千|倍|次|天|小时)", lower))
 
     if evasion_hits >= 1 or char_len < 18:
         return {
@@ -235,37 +316,58 @@ def mock_interviewer_reply(
     next_ladder_level: int,
     next_seed_question: str,
     eval_result: dict,
+    interview_type: str = "project_deep_dive",
 ) -> str:
     pressure = interviewer_style == "pressure"
     missing = (eval_result.get("missing_points") or ["具体落地边界"])[0]
 
     if action == "end_interview":
         if pressure:
-            return "好，今天的技术深挖先到这里。你把几个关键取舍和边界再复盘一下，稍后看复盘台的具体批注和重构建议。"
+            return "好，今天的深挖先到这里。你把几个关键取舍、证据和边界再复盘一下，稍后看复盘台的具体批注和重构建议。"
         return "好的，今天预设的几个核心考点我们已经过完了，辛苦了！接下来系统会基于逐字稿生成证据锚定复盘报告，请稍候。"
 
     if action == "next_topic":
         prefix = (
-            "这一块先停一下，追问两轮都没给到底层闭环，我记一个待补短板。切下一题："
+            "这一块先停一下，追问两轮都没给到核心闭环，我记一个待补短板。切下一题："
             if (pressure and eval_result.get("score", 0) < 0.65)
-            else "这一题的链路基本过清楚了，我们切到下一个考点："
+            else "这一题的脉络基本过清楚了，我们切到下一个考点："
         )
         return f"{prefix}{next_seed_question}"
 
     if action == "reprobe_same_level":
         if eval_result.get("is_off_topic"):
             return (
-                f"你刚刚有点跑偏了，我没有问泛泛的背景，而是聚焦在 `{source_entrypoint}` 的 `{topic_title}`。直接回答：{missing} 是怎么落地的？"
+                f"你刚刚有点跑偏了，我没有问泛泛的背景，而是聚焦在 `{source_entrypoint}` 的 `{topic_title}`。直接回答：{missing} 是怎么做的？"
                 if pressure
-                else f"我们拉回当前考点「{topic_title}」本身：能不能先不展开外围内容，具体说说你在这块是怎么解决「{missing}」的？"
+                else f"我们拉回当前考点「{topic_title}」本身：能不能先不展开外围内容，具体说说你在这块是怎么处理「{missing}」的？"
             )
         return (
-            f"听起来还是偏概念背诵，没看到你在 `{source_entrypoint}` 里的真刀真枪。给我具体代码级做法，而不是教科书定义。"
+            f"听起来还是偏概念/空话，没看到你的真刀真枪细节。给我具体行动或底层实现，而不是泛泛总结。"
             if pressure
-            else f"概念方向是对的，不过我还想听听你自己在项目里的真实做法，尤其是「{missing}」这块，能举个具体例子吗？"
+            else f"大方向是对的，不过我还想听听更具体的实操细节，尤其是「{missing}」这块，能举个具体例子或数据吗？"
         )
 
-    # upgrade_level
+    if interview_type == "general_behavioral":
+        star_prompts = {
+            2: (
+                "背景清楚了，但不要只说“我们团队做了”。在「Action」这一步，你个人亲手做了哪几个关键判断？为什么不选另一条路？"
+                if pressure
+                else "背景我听明白了，接着聊聊你的具体行动（Action）：当时你个人承担了哪部分关键推动？是怎么落地执行的？"
+            ),
+            3: (
+                "如果有同事或业务方强烈反对你的方案，或者上线前时间卡死，当时最难的冲突和权衡细节是什么？拿出量化结果来证明。"
+                if pressure
+                else "很有意思的经历。当时团队内有没有不同声音或意外阻碍？最终取得了什么可量化的结果（Result）？"
+            ),
+            4: (
+                "复盘一下：如果重来一遍或者换到更严苛的十倍规模团队，你当时的做法哪一步会先失效？建立什么长期机制避免再踩坑？"
+                if not pressure
+                else "最后一问：如果类似危机明天再重演，而关键合作方完全不配合，你如何用机制而不是靠个人加班兜住结果？"
+            ),
+        }
+        return star_prompts.get(next_ladder_level, next_seed_question)
+
+    # Technical / Role / Bagu upgrade_level
     level_prompts = {
         2: (
             f"原理说得通，现在看实战：在 `{source_entrypoint}` 里，你当时具体怎么选型落地的？如果重来一次会改哪里？"
@@ -297,6 +399,7 @@ def mock_judge_report(
     turns: list[dict],
     state_snapshot: dict,
     code_submissions: list[dict] | None = None,
+    interview_type: str = "project_deep_dive",
 ) -> JudgeLLMOutput:
     user_turns = [t for t in turns if t.get("speaker") == "user"]
     code_subs = code_submissions or []
@@ -394,6 +497,17 @@ def mock_judge_report(
     max_level = max([int(t.get("ladder_level", 1)) for t in user_turns] + [1])
 
     def build_dim(dim_key: str, label: str, offset: int) -> DimensionEvaluation:
+        if (
+            dim_key == "code_and_testing"
+            and not code_subs
+            and interview_type in {"general_behavioral", "bagu_fundamentals"}
+            and "code_and_testing" not in tested_dims
+        ):
+            return DimensionEvaluation(
+                evidence_quotes=[],
+                reasoning="本场为纯行为/纯概念模式且未开启代码沙箱实操，依据可观测性铁律标为 N/A (null)。",
+                score=None,
+            )
         if dim_key not in tested_dims and len(user_turns) < 3:
             return DimensionEvaluation(
                 evidence_quotes=[],

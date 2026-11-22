@@ -104,6 +104,13 @@ def _session_to_detail(row: InterviewSession) -> SessionDetailResponse:
         id=row.id,
         context_id=row.context_id,
         context_title=row.context.title if row.context else "",
+        interview_type=(
+            row.context.interview_type if row.context and row.context.interview_type else "project_deep_dive"
+        ),  # type: ignore[arg-type]
+        role_track_id=row.context.role_track_id if row.context else None,
+        knowledge_pack_ids=(
+            list(row.context.knowledge_pack_ids_json or []) if row.context else []
+        ),
         interviewer_style=row.interviewer_style,  # type: ignore[arg-type]
         interaction_mode=row.interaction_mode,  # type: ignore[arg-type]
         status=row.status,
@@ -171,6 +178,8 @@ async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depen
         raise HTTPException(status_code=404, detail="指定的准备上下文不存在")
 
     cfg = await get_runtime_config(db)
+    ctx_type = ctx.interview_type or "project_deep_dive"
+    ctx_packs = list(ctx.knowledge_pack_ids_json or [])
     try:
         prep_outcome = await run_prep_pipeline(
             cfg,
@@ -178,6 +187,9 @@ async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depen
             job_description=ctx.job_description,
             repo_digest_markdown=ctx.repo_digest_markdown or "",
             interviewer_style=payload.interviewer_style,
+            interview_type=ctx_type,
+            role_track_id=ctx.role_track_id,
+            knowledge_pack_ids=ctx_packs,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Prep 预规划生成失败: {exc}") from exc
@@ -190,6 +202,7 @@ async def create_session(payload: CreateSessionRequest, db: AsyncSession = Depen
         repo_digest_markdown=ctx.repo_digest_markdown or "",
         prep_plan=prep_outcome.plan,
         tools=INTERVIEW_TOOLS_DEFINITION,
+        interview_type=ctx_type,
     )
 
     now = _utcnow()
@@ -252,6 +265,10 @@ async def list_sessions(db: AsyncSession = Depends(get_db)):
                 id=r.id,
                 context_id=r.context_id,
                 context_title=r.context.title if r.context else "",
+                interview_type=(
+                    r.context.interview_type if r.context and r.context.interview_type else "project_deep_dive"
+                ),  # type: ignore[arg-type]
+                role_track_id=r.context.role_track_id if r.context else None,
                 interviewer_style=r.interviewer_style,  # type: ignore[arg-type]
                 interaction_mode=r.interaction_mode,  # type: ignore[arg-type]
                 status=r.status,
@@ -375,11 +392,17 @@ async def submit_turn_stream(
         )
 
     async def event_stream() -> AsyncGenerator[str, None]:
+        ctx_type = (
+            session.context.interview_type
+            if session.context and session.context.interview_type
+            else "project_deep_dive"
+        )
         try:
             graph = build_interview_turn_graph(cfg)
             graph_out = await graph.ainvoke(
                 {
                     "session_id": session.id,
+                    "interview_type": ctx_type,
                     "interviewer_style": session.interviewer_style,
                     "resume_markdown": session.context.resume_markdown,
                     "job_description": session.context.job_description,
@@ -429,6 +452,7 @@ async def submit_turn_stream(
                     next_ladder_level=next_state.ladder_level,
                     next_seed_question=topic.l1_seed_question,
                     eval_result=eval_result,
+                    interview_type=ctx_type,
                 )
                 async for piece in mock_stream_text(mock_text):
                     full_reply_chunks.append(piece)

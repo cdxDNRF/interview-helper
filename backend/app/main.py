@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes_contexts import router as contexts_router
 from app.api.routes_mistakes import router as mistakes_router
 from app.api.routes_observability import router as observability_router
+from app.api.routes_presets import router as presets_router
 from app.api.routes_reports import router as reports_router
 from app.api.routes_sessions import router as sessions_router
 from app.api.routes_settings import router as settings_router
@@ -40,6 +41,7 @@ app.add_middleware(
 )
 
 app.include_router(settings_router)
+app.include_router(presets_router)
 app.include_router(contexts_router)
 app.include_router(sessions_router)
 app.include_router(voice_router)

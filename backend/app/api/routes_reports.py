@@ -102,6 +102,11 @@ async def evaluate_session(session_id: str, db: AsyncSession = Depends(get_db)):
             resume_markdown=session.context.resume_markdown,
             job_description=session.context.job_description,
             code_submissions=code_subs_dicts,
+            interview_type=(
+                session.context.interview_type
+                if session.context and session.context.interview_type
+                else "project_deep_dive"
+            ),
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"赛后裁判评估失败: {exc}") from exc

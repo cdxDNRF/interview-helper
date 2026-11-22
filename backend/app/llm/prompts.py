@@ -46,6 +46,27 @@ STYLE_PERSONAS: dict[str, str] = {
 }
 
 
+INTERVIEW_TYPE_RULES: dict[str, str] = {
+    "project_deep_dive": (
+        "【面试模式：项目与源码深挖】\n"
+        "- 紧扣候选人简历与仓库源码真实路径/函数/模块名发问，严禁编造仓库中不存在的文件或代码。"
+    ),
+    "general_behavioral": (
+        "【面试模式：通用综合与 STAR 行为面试】\n"
+        "- 严格按 STAR 法则（Situation 情境、Task 任务、Action 个人行动、Result 量化结果与反思）深挖。\n"
+        "- 若候选人只讲“我们团队做了……”，必须立刻追问“你个人具体负责哪块决策？遇到最大分歧是什么？用什么数据证明有效？”"
+    ),
+    "cs_role_track": (
+        "【面试模式：计算机职业专项面试】\n"
+        "- 围绕选定岗位方向的核心能力矩阵（若候选人同时提供了简历/源码，则融合项目细节）进行 L1–L4 压力追问。"
+    ),
+    "bagu_fundamentals": (
+        "【面试模式：重要八股深度突击】\n"
+        "- 严禁满足于死记硬背标准定义！L1 核清概念后，L2/L3 必须要求结合底层数据结构、协议状态机或并发内存模型讲清原因，L4 构造线上故障逼近认知边界。"
+    ),
+}
+
+
 def build_static_interview_prefix(
     interviewer_style: str,
     resume_markdown: str,
@@ -53,6 +74,7 @@ def build_static_interview_prefix(
     repo_digest_markdown: str,
     prep_plan: PrepPlan,
     tools: list[dict[str, Any]] | None = None,
+    interview_type: str = "project_deep_dive",
 ) -> tuple[str, str]:
     """
     构建严格静态前缀（Prompt Caching 铁律）：
@@ -60,6 +82,9 @@ def build_static_interview_prefix(
     绝不在此前缀中混入任何时间戳、UUID、随机种子或动态轮次计数！
     """
     persona = STYLE_PERSONAS.get(interviewer_style, STYLE_PERSONAS["gentle"])
+    mode_rule = INTERVIEW_TYPE_RULES.get(
+        interview_type, INTERVIEW_TYPE_RULES["project_deep_dive"]
+    )
     tools_canonical = canonicalize_tools_json(tools)
     frozen_outline = json.dumps(
         prep_plan.model_dump(mode="json"),
@@ -71,9 +96,10 @@ def build_static_interview_prefix(
     static_system_prompt = (
         "=== 1. 面试官系统人设 ===\n"
         f"{persona}\n"
+        f"{mode_rule}\n"
         "核心要求：\n"
         "1. 严格遵循动态尾部的状态机指令（当前考点与 L1-L4 深度阶梯），不得擅自降级或提前结束。\n"
-        "2. 结合候选人简历与仓库源码真实路径/函数/模块名进行提问，严禁编造仓库中不存在的文件或代码。\n"
+        "2. 结合上下文真实材料或选定考点大纲提问，严禁凭空捏造不存在的经历或文件。\n"
         "3. 输出纯文本面试官发言，不要输出 Markdown 标题或 JSON 包装。\n\n"
         "=== 2. 固定工具定义（Canonical JSON） ===\n"
         f"{tools_canonical}\n\n"

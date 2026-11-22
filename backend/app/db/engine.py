@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from sqlalchemy import event
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -43,6 +43,27 @@ async def init_db(target_engine=None) -> None:
     eng = target_engine or engine
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Idempotent migration for existing SQLite interview_contexts tables
+        rows = (await conn.execute(text("PRAGMA table_info(interview_contexts);"))).all()
+        existing_cols = {r[1] for r in rows}
+        if "interview_type" not in existing_cols:
+            await conn.execute(
+                text(
+                    "ALTER TABLE interview_contexts ADD COLUMN interview_type VARCHAR(32) DEFAULT 'project_deep_dive'"
+                )
+            )
+        if "role_track_id" not in existing_cols:
+            await conn.execute(
+                text(
+                    "ALTER TABLE interview_contexts ADD COLUMN role_track_id VARCHAR(64)"
+                )
+            )
+        if "knowledge_pack_ids_json" not in existing_cols:
+            await conn.execute(
+                text(
+                    "ALTER TABLE interview_contexts ADD COLUMN knowledge_pack_ids_json JSON DEFAULT '[]'"
+                )
+            )
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
