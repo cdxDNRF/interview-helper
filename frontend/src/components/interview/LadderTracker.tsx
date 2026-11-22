@@ -42,12 +42,12 @@ export function LadderTracker({ prepPlan, state }: LadderTrackerProps) {
                 <div
                   key={step.level}
                   className={cn(
-                    "rounded-lg border px-2 py-2 text-center transition-all",
+                    "rounded-xl border px-2 py-2 text-center transition-all backdrop-blur-md",
                     active
-                      ? "border-sky-400 bg-sky-500/15 text-sky-200"
+                      ? "border-sky-400/60 bg-sky-400/15 text-sky-200 shadow-[0_0_16px_rgba(56,189,248,0.16)]"
                       : passed
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                      : "border-zinc-800 bg-zinc-950/60 text-zinc-500"
+                      ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-200"
+                      : "border-white/[0.08] bg-white/[0.03] text-zinc-400"
                   )}
                 >
                   <div className="text-[11px] font-semibold">L{step.level}</div>
@@ -60,7 +60,7 @@ export function LadderTracker({ prepPlan, state }: LadderTrackerProps) {
           </div>
 
           {activeTopic && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs space-y-1.5">
+            <div className="rounded-xl border border-white/[0.09] bg-white/[0.03] p-3 text-xs space-y-1.5">
               <div className="font-medium text-zinc-100">{activeTopic.title}</div>
               {activeTopic.source_entrypoint && (
                 <div className="flex items-center gap-1.5 font-mono text-[11px] text-sky-300">
@@ -92,10 +92,10 @@ export function LadderTracker({ prepPlan, state }: LadderTrackerProps) {
               <div
                 key={topic.topic_id}
                 className={cn(
-                  "rounded-lg border p-2.5 text-xs transition-colors",
+                  "rounded-xl border p-2.5 text-xs transition-all",
                   isCurr
-                    ? "border-sky-500/50 bg-sky-500/10"
-                    : "border-zinc-800/80 bg-zinc-950/40"
+                    ? "border-sky-400/50 bg-sky-400/[0.11] shadow-[0_0_20px_rgba(56,189,248,0.12)]"
+                    : "border-white/[0.08] bg-white/[0.025]"
                 )}
               >
                 <div className="flex items-start justify-between gap-2">

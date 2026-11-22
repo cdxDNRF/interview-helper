@@ -27,18 +27,18 @@ export function Navbar() {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#070a14]/70 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.45)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-4 sm:gap-6">
           <Link href="/" className="flex items-center gap-2.5 text-zinc-100 hover:opacity-90">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-400 border border-sky-500/30">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 border border-sky-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
               <AudioWaveform className="h-4 w-4" />
             </span>
             <span className="font-semibold tracking-tight text-sm sm:text-base">
               interview-helper
             </span>
             <Badge variant="secondary" className="hidden md:inline-flex text-[11px]">
-              P1 · Sandbox & Retry
+              P2 · Glass &amp; Tracks
             </Badge>
           </Link>
 
@@ -46,21 +46,21 @@ export function Navbar() {
             <Link
               href="/"
               className={cn(
-                "rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
+                "rounded-lg px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-all",
                 pathname === "/"
-                  ? "bg-zinc-800 text-zinc-100 font-medium"
-                  : "text-zinc-400 hover:text-zinc-100"
+                  ? "bg-white/[0.11] border border-white/[0.12] text-white font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "border border-transparent text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100"
               )}
             >
-              准备台 & 历史
+              准备台 &amp; 历史
             </Link>
             <Link
               href="/mistakes"
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-all",
                 pathname.startsWith("/mistakes")
-                  ? "bg-zinc-800 text-zinc-100 font-medium"
-                  : "text-zinc-400 hover:text-zinc-100"
+                  ? "bg-white/[0.11] border border-white/[0.12] text-white font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "border border-transparent text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100"
               )}
             >
               <BookMarked className="h-3.5 w-3.5" />
@@ -69,10 +69,10 @@ export function Navbar() {
             <Link
               href="/observability"
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-all",
                 pathname.startsWith("/observability")
-                  ? "bg-zinc-800 text-zinc-100 font-medium"
-                  : "text-zinc-400 hover:text-zinc-100"
+                  ? "bg-white/[0.11] border border-white/[0.12] text-white font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "border border-transparent text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100"
               )}
             >
               <Activity className="h-3.5 w-3.5" />
@@ -81,10 +81,10 @@ export function Navbar() {
             <Link
               href="/settings"
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
+                "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-all",
                 pathname === "/settings"
-                  ? "bg-zinc-800 text-zinc-100 font-medium"
-                  : "text-zinc-400 hover:text-zinc-100"
+                  ? "bg-white/[0.11] border border-white/[0.12] text-white font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "border border-transparent text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100"
               )}
             >
               <Settings className="h-3.5 w-3.5" />

@@ -132,11 +132,11 @@ export function MinimalWaveform({
   const cfg = STATE_CONFIG[indicator];
 
   return (
-    <div className="rounded-xl border border-zinc-800/90 bg-zinc-950/70 px-4 py-3">
+    <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.07)] px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div
           className={cn(
-            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+            "inline-flex items-center gap-2 rounded-full border backdrop-blur-md px-3 py-1 text-xs font-medium",
             cfg.pillClass
           )}
         >
@@ -146,7 +146,7 @@ export function MinimalWaveform({
 
         <div className="flex items-center gap-2 text-[11px] text-zinc-400">
           {ttsProviderBadge && (
-            <span className="rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 font-mono text-[10px]">
+            <span className="rounded-lg border border-white/[0.10] bg-white/[0.05] px-2 py-0.5 font-mono text-[10px] text-zinc-200">
               语音: {ttsProviderBadge}
             </span>
           )}

@@ -5,6 +5,7 @@ import type {
   InterviewStateSnapshot,
   MistakeItemResponse,
   ObservabilityOverviewResponse,
+  PresetsCatalogResponse,
   SessionDetailResponse,
   SessionListItem,
   SessionObservabilityResponse,
@@ -63,6 +64,10 @@ export async function testModelConnection(payload: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+export async function getPresets(): Promise<PresetsCatalogResponse> {
+  return apiJson("/api/presets");
 }
 
 export async function createContext(formData: FormData): Promise<ContextResponse> {

@@ -476,11 +476,25 @@ export default function InterviewRoomPage() {
     session.prep_plan.topics.find((t) => t.coding_challenge)?.coding_challenge ||
     null;
 
+  const modeLabelMap: Record<string, string> = {
+    project_deep_dive: "项目 & 源码深挖",
+    general_behavioral: "通用综合面 · STAR",
+    cs_role_track: "CS 职业专项",
+    bagu_fundamentals: "核心八股突击",
+  };
+  const modeLabel = modeLabelMap[session.interview_type] || "模拟面试";
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.035] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.07)] px-4 py-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="text-base font-semibold text-zinc-100">{session.context_title}</h1>
+          <Badge variant="default">{modeLabel}</Badge>
+          {session.role_track_id && (
+            <Badge variant="secondary" className="font-mono text-[10px]">
+              {session.role_track_id}
+            </Badge>
+          )}
           <Badge variant={session.interviewer_style === "pressure" ? "danger" : "success"}>
             {session.interviewer_style === "pressure" ? "大厂高压拷打" : "温和引导"}
           </Badge>
@@ -555,10 +569,10 @@ export default function InterviewRoomPage() {
                   <div
                     key={t.id}
                     className={cn(
-                      "flex flex-col gap-1 rounded-xl border p-3.5 text-sm",
+                      "flex flex-col gap-1 rounded-2xl border backdrop-blur-md p-3.5 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                       isAi
-                        ? "border-zinc-800 bg-zinc-950/80 mr-8"
-                        : "border-sky-500/30 bg-sky-500/10 ml-8"
+                        ? "border-white/[0.09] bg-white/[0.04] mr-8"
+                        : "border-sky-400/30 bg-sky-400/[0.11] ml-8"
                     )}
                   >
                     <div className="flex items-center justify-between text-[11px] text-zinc-400">

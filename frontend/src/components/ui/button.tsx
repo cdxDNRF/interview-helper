@@ -5,15 +5,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-sky-500 text-zinc-950 hover:bg-sky-400 font-semibold",
-        secondary: "bg-zinc-800 text-zinc-100 hover:bg-zinc-700 border border-zinc-700",
-        outline: "border border-zinc-700 bg-transparent text-zinc-200 hover:bg-zinc-800/70",
-        ghost: "text-zinc-300 hover:bg-zinc-800/70 hover:text-zinc-50",
-        destructive: "bg-rose-600 text-white hover:bg-rose-500",
+        default:
+          "bg-gradient-to-r from-sky-400 to-cyan-300 text-slate-950 font-semibold shadow-[0_0_24px_rgba(56,189,248,0.22)] hover:from-sky-300 hover:to-cyan-200",
+        secondary:
+          "border border-white/[0.11] bg-white/[0.06] backdrop-blur-md text-zinc-100 hover:bg-white/[0.11] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        outline:
+          "border border-white/[0.12] bg-white/[0.02] backdrop-blur-md text-zinc-200 hover:bg-white/[0.08]",
+        ghost: "text-zinc-300 hover:bg-white/[0.07] hover:text-white",
+        destructive:
+          "border border-rose-400/30 bg-rose-500/80 text-white backdrop-blur-md hover:bg-rose-500 shadow-[0_4px_16px_rgba(244,63,94,0.25)]",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,3 +1,8 @@
+export type InterviewType =
+  | "project_deep_dive"
+  | "general_behavioral"
+  | "cs_role_track"
+  | "bagu_fundamentals";
 export type InterviewerStyle = "gentle" | "pressure";
 export type InteractionMode = "voice" | "text";
 export type FourStateIndicator =
@@ -44,6 +49,9 @@ export interface SettingsReadResponse {
 export interface ContextResponse {
   id: string;
   title: string;
+  interview_type: InterviewType;
+  role_track_id: string | null;
+  knowledge_pack_ids: string[];
   resume_filename: string;
   resume_markdown: string;
   job_description: string;
@@ -81,6 +89,39 @@ export interface PrepPlan {
   resume_jd_gaps: GapPoint[];
   topics: PrepTopic[];
   hotwords: string[];
+}
+
+export interface RoleTrackPreset {
+  id: string;
+  name: string;
+  tagline: string;
+  icon: string;
+  default_jd: string;
+  recommended_dimensions: string[];
+  hotwords: string[];
+  core_topics: PrepTopic[];
+}
+
+export interface KnowledgePackPreset {
+  id: string;
+  name: string;
+  category: string;
+  summary: string;
+  hotwords: string[];
+  core_topics: PrepTopic[];
+}
+
+export interface GeneralPackPreset {
+  id: string;
+  name: string;
+  summary: string;
+  core_topics: PrepTopic[];
+}
+
+export interface PresetsCatalogResponse {
+  roles: RoleTrackPreset[];
+  fundamentals: KnowledgePackPreset[];
+  general_packs: GeneralPackPreset[];
 }
 
 export interface TopicRecord {
@@ -155,6 +196,9 @@ export interface SessionDetailResponse {
   id: string;
   context_id: string;
   context_title: string;
+  interview_type: InterviewType;
+  role_track_id: string | null;
+  knowledge_pack_ids: string[];
   interviewer_style: InterviewerStyle;
   interaction_mode: InteractionMode;
   status: string;
@@ -173,6 +217,8 @@ export interface SessionListItem {
   id: string;
   context_id: string;
   context_title: string;
+  interview_type: InterviewType;
+  role_track_id: string | null;
   interviewer_style: InterviewerStyle;
   interaction_mode: InteractionMode;
   status: string;

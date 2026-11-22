@@ -35,9 +35,9 @@ export function ThinkingBufferControls({
   disabled,
 }: ThinkingBufferControlsProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-800/80 bg-zinc-900/60 px-3 py-2.5">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/[0.09] bg-white/[0.04] backdrop-blur-xl shadow-[0_8px_28px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)] px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-0.5">
+        <div className="inline-flex rounded-xl border border-white/[0.09] bg-white/[0.03] p-0.5">
           <button
             type="button"
             onClick={() => onModeChange("voice")}
@@ -95,10 +95,10 @@ export function ThinkingBufferControls({
           onTouchEnd={onHoldEnd}
           disabled={disabled}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors select-none cursor-pointer",
+            "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all select-none cursor-pointer",
             isHoldingSpace
-              ? "border-amber-400 bg-amber-500/25 text-amber-200"
-              : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+              ? "border-amber-400/70 bg-amber-400/20 text-amber-100 shadow-[0_0_20px_rgba(251,191,36,0.2)]"
+              : "border-white/[0.11] bg-white/[0.05] text-zinc-200 hover:bg-white/[0.1]"
           )}
           title="在非输入框焦点时按住 Space，或按住此按钮暂缓提交"
         >
