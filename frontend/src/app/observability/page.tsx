@@ -233,10 +233,10 @@ export default function ObservabilityPage() {
                     type="button"
                     onClick={() => setSelectedSessionId(t.session_id)}
                     className={cn(
-                      "w-full rounded-lg border p-2.5 text-left text-xs transition-colors cursor-pointer",
+                      "w-full rounded-xl border p-2.5 text-left text-xs transition-all cursor-pointer",
                       active
-                        ? "border-sky-400 bg-sky-500/10"
-                        : "border-zinc-800 bg-zinc-950/60 hover:border-zinc-700"
+                        ? "border-sky-400/60 bg-sky-400/[0.12]"
+                        : "border-white/[0.08] bg-white/[0.025] hover:border-white/[0.16]"
                     )}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1.5">

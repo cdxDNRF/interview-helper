@@ -54,7 +54,7 @@ export default function MistakesPage() {
           </p>
         </div>
 
-        <div className="inline-flex rounded-lg border border-zinc-800 bg-zinc-900 p-1 text-xs">
+        <div className="inline-flex rounded-xl border border-white/[0.09] bg-white/[0.04] backdrop-blur-md p-1 text-xs">
           {(
             [
               ["all", "全部"],
@@ -70,9 +70,9 @@ export default function MistakesPage() {
                 setFilter(key);
               }}
               className={cn(
-                "rounded-md px-3 py-1.5 font-medium transition-colors cursor-pointer",
+                "rounded-lg px-3 py-1.5 font-medium transition-all cursor-pointer",
                 filter === key
-                  ? "bg-zinc-800 text-zinc-100"
+                  ? "bg-white/[0.12] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
                   : "text-zinc-400 hover:text-zinc-200"
               )}
             >

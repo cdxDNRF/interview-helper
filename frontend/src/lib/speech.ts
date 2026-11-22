@@ -8,17 +8,47 @@ export function speakWithWebSpeech(
     return () => {};
   }
 
+  let finished = false;
+  let started = false;
+  const finishOnce = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(watchdogId);
+    onEnd?.();
+  };
+
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN";
   utterance.rate = 1.05;
-  utterance.onstart = () => onStart?.();
-  utterance.onend = () => onEnd?.();
-  utterance.onerror = () => onEnd?.();
-  window.speechSynthesis.speak(utterance);
+  utterance.onstart = () => {
+    started = true;
+    onStart?.();
+  };
+  utterance.onend = finishOnce;
+  utterance.onerror = finishOnce;
+
+  // Guard against headless/muted environments where SpeechSynthesis never fires start/end
+  const watchdogId = window.setTimeout(() => {
+    if (!started) {
+      finishOnce();
+    }
+  }, 2500);
+
+  try {
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    finishOnce();
+  }
 
   return () => {
-    window.speechSynthesis.cancel();
+    finished = true;
+    clearTimeout(watchdogId);
+    try {
+      window.speechSynthesis.cancel();
+    } catch {
+      // ignore
+    }
   };
 }
 

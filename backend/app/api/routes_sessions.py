@@ -21,7 +21,7 @@ from app.graph.interview_graph import (
     initialize_state_snapshot,
 )
 from app.graph.prep_graph import run_prep_pipeline
-from app.llm.client import LLMCallResult, stream_chat_completion
+from app.llm.client import LLMCallResult, chat_completion, stream_chat_completion
 from app.llm.mock_adapter import mock_interviewer_reply, mock_stream_text
 from app.llm.prompts import INTERVIEW_TOOLS_DEFINITION, build_static_interview_prefix
 from app.schemas.interview import (
@@ -344,7 +344,14 @@ async def submit_turn_stream(
     history_messages = [
         {
             "role": "assistant" if t.speaker == "ai" else "user",
-            "content": t.content,
+            "content": (
+                t.content.strip()
+                or (
+                    "（请继续围绕当前考点深入展开具体实现细节与边界权衡。）"
+                    if t.speaker == "ai"
+                    else "（空）"
+                )
+            ),
         }
         for t in session.turns
         if t.speaker in {"ai", "user"}
@@ -458,11 +465,14 @@ async def submit_turn_stream(
                     full_reply_chunks.append(piece)
                     yield _format_sse("delta", {"text": piece})
             else:
+                # Note: INTERVIEW_TOOLS_DEFINITION is already frozen canonically in messages[0]
+                # and structured turn evaluation ran in live_eval; omit active function-calling
+                # tools here so Gemini/OpenAI streams spoken interview prose in a single RTT.
                 async for chunk_ev in stream_chat_completion(
                     cfg.live_llm,
                     cfg,
                     graph_out["interviewer_messages"],
-                    tools=INTERVIEW_TOOLS_DEFINITION,
+                    tools=None,
                 ):
                     if chunk_ev["type"] == "delta":
                         full_reply_chunks.append(chunk_ev["text"])
@@ -470,7 +480,43 @@ async def submit_turn_stream(
                     elif chunk_ev["type"] == "done":
                         reply_usage = chunk_ev["result"]
 
+                # Non-streaming real-LLM retry if upstream stream ended without visible text
+                if not "".join(full_reply_chunks).strip():
+                    retry_msgs = list(graph_out["interviewer_messages"]) + [
+                        {
+                            "role": "user",
+                            "content": "请直接用中文向候选人说出你本轮要追问的具体问题，不要输出空白或调用任何工具。",
+                        }
+                    ]
+                    fallback_res = await chat_completion(
+                        cfg.live_llm,
+                        cfg,
+                        retry_msgs,
+                        tools=None,
+                        max_tokens=max(2048, cfg.live_llm.max_tokens),
+                    )
+                    if fallback_res.content:
+                        full_reply_chunks.append(fallback_res.content)
+                        yield _format_sse("delta", {"text": fallback_res.content})
+                        reply_usage = fallback_res
+
             ai_text = "".join(full_reply_chunks).strip()
+            if not ai_text:
+                # Absolute non-empty guard so no blank interviewer bubble is ever stored
+                topic = prep_plan.topics[
+                    min(next_state.current_topic_idx, len(prep_plan.topics) - 1)
+                ]
+                ai_text = mock_interviewer_reply(
+                    interviewer_style=session.interviewer_style,
+                    action=eval_action,
+                    topic_title=topic.title,
+                    source_entrypoint=topic.source_entrypoint,
+                    next_ladder_level=next_state.ladder_level,
+                    next_seed_question=topic.l1_seed_question,
+                    eval_result=eval_result,
+                    interview_type=ctx_type,
+                )
+                yield _format_sse("delta", {"text": ai_text})
             if reply_usage is not None:
                 _record_usage(
                     db, session, "live_reply", cfg.live_llm.base_url, reply_usage, prefix_sha

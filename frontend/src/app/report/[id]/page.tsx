@@ -115,7 +115,7 @@ export default function ReportPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.035] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.07)] p-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Link
@@ -268,7 +268,7 @@ export default function ReportPage() {
                     {dim.evidence_quotes.map((q, qi) => (
                       <div
                         key={qi}
-                        className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-2 text-[11px] text-zinc-300"
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-2.5 text-[11px] text-zinc-200"
                       >
                         <div className="flex items-center gap-1 text-sky-400 font-mono text-[10px] mb-0.5">
                           <Quote className="h-3 w-3" />

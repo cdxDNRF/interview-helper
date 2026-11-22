@@ -97,7 +97,7 @@ async def run_prep_pipeline(
         except (ValidationError, json.JSONDecodeError, ValueError) as exc:
             last_err = str(exc)
             if attempt < 2:
-                messages.append({"role": "assistant", "content": call_res.content})
+                messages.append({"role": "assistant", "content": call_res.content or "{}"})
                 messages.append(
                     {
                         "role": "user",

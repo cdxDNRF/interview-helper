@@ -216,20 +216,15 @@ export async function streamTurn(
   const reader = resp.body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
+  let receivedDone = false;
+  let receivedError = false;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    const blocks = buffer.split("\n\n");
-    buffer = blocks.pop() || "";
-
+  const processBlocks = (blocks: string[]) => {
     for (const block of blocks) {
       if (!block.trim()) continue;
       let eventType = "message";
       const dataLines: string[] = [];
-      for (const line of block.split("\n")) {
+      for (const line of block.split(/\r?\n/)) {
         if (line.startsWith("event:")) {
           eventType = line.slice(6).trim();
         } else if (line.startsWith("data:")) {
@@ -240,9 +235,34 @@ export async function streamTurn(
       const parsed = JSON.parse(dataLines.join("\n"));
       if (eventType === "state") handlers.onState(parsed);
       else if (eventType === "delta") handlers.onDelta(parsed.text || "");
-      else if (eventType === "done") handlers.onDone(parsed);
-      else if (eventType === "error") handlers.onError(parsed.message || "流式处理异常");
+      else if (eventType === "done") {
+        receivedDone = true;
+        handlers.onDone(parsed);
+      } else if (eventType === "error") {
+        receivedError = true;
+        handlers.onError(parsed.message || "流式处理异常");
+      }
     }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const blocks = buffer.split(/\r?\n\r?\n/);
+    buffer = blocks.pop() || "";
+    processBlocks(blocks);
+  }
+
+  // Flush remaining decoded text & final block if stream closed without trailing blank line
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    processBlocks(buffer.split(/\r?\n\r?\n/));
+  }
+
+  if (!receivedDone && !receivedError) {
+    throw new Error("流式连接意外结束，未收到完整回复，请重试。");
   }
 }
 

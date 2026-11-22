@@ -217,11 +217,13 @@ def build_interview_turn_graph(runtime_cfg: AppRuntimeConfig):
             ],
             response_format={"type": "json_object"},
             temperature=0.1,
-            max_tokens=1536,
+            max_tokens=2048,
         )
         try:
             parsed = json.loads(strip_json_fences(call_res.content))
             score = float(parsed.get("score", 0.5))
+            if 1.0 < score <= 100.0:
+                score = score / 100.0
             parsed["score"] = min(1.0, max(0.0, score))
         except Exception:
             parsed = {

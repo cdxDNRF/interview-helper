@@ -38,6 +38,57 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+function renderInlineFormatting(text: string): React.ReactNode[] {
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return tokens.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={idx} className="font-semibold text-white">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code
+          key={idx}
+          className="rounded border border-white/[0.12] bg-white/[0.07] px-1 py-0.5 font-mono text-[0.85em] text-sky-200"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
+}
+
+function ChatMessageBody({ content }: { content: string }) {
+  const lines = content.split("\n");
+  return (
+    <div className="space-y-1.5 leading-relaxed text-zinc-100">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={i} className="h-1" />;
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+          return (
+            <div key={i} className="flex items-start gap-2 pl-1">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/80" />
+              <div className="min-w-0 flex-1">{renderInlineFormatting(trimmed.slice(2))}</div>
+            </div>
+          );
+        }
+        return (
+          <p key={i} className="whitespace-pre-wrap break-words">
+            {renderInlineFormatting(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function InterviewRoomPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -275,12 +326,18 @@ export default function InterviewRoomPage() {
               playAiVoice(ev.ai_turn.content, mode);
             },
             onError: (msg) => {
+              setStreamingAiText("");
+              setTurns((prev) => prev.filter((t) => t.id !== optimisticUserTurn.id));
+              setDraft((prev) => (prev ? prev : text));
               setErrorMsg(msg);
               setIndicator("listening");
             },
           }
         );
       } catch (err) {
+        setStreamingAiText("");
+        setTurns((prev) => prev.filter((t) => t.id !== optimisticUserTurn.id));
+        setDraft((prev) => (prev ? prev : text));
         setErrorMsg(err instanceof Error ? err.message : "提交回答失败");
         setIndicator("listening");
       } finally {
@@ -583,21 +640,23 @@ export default function InterviewRoomPage() {
                         Turn {t.turn_index} · L{t.ladder_level}
                       </span>
                     </div>
-                    <p className="whitespace-pre-wrap leading-relaxed text-zinc-100">
-                      {t.content}
-                    </p>
+                    {t.content.trim() ? (
+                      <ChatMessageBody content={t.content} />
+                    ) : (
+                      <p className="text-xs italic text-amber-300/90">
+                        （该轮历史回复为空，已自动启用兜底恢复——请直接继续作答即可。）
+                      </p>
+                    )}
                   </div>
                 );
               })}
 
               {streamingAiText && (
-                <div className="flex flex-col gap-1 rounded-xl border border-violet-500/40 bg-violet-500/10 p-3.5 text-sm mr-8">
+                <div className="flex flex-col gap-1 rounded-2xl border border-violet-400/40 bg-violet-500/[0.12] backdrop-blur-md p-3.5 text-sm mr-8">
                   <div className="text-[11px] font-medium text-violet-300">
                     AI 面试官（生成中...）
                   </div>
-                  <p className="whitespace-pre-wrap leading-relaxed text-zinc-100">
-                    {streamingAiText}
-                  </p>
+                  <ChatMessageBody content={streamingAiText} />
                 </div>
               )}
               <div ref={feedEndRef} />

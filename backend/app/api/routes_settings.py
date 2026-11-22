@@ -70,7 +70,7 @@ async def test_connection(payload: TestConnectionRequest, db: AsyncSession = Dep
                 api_key=key,
                 model=payload.model.strip(),
                 temperature=0.0,
-                max_tokens=32,
+                max_tokens=256,
             ),
             cfg,
             [{"role": "user", "content": "Reply with exactly: OK"}],

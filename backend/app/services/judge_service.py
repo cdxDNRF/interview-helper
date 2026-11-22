@@ -117,7 +117,7 @@ async def run_post_interview_judge(
         except (ValidationError, json.JSONDecodeError, ValueError) as exc:
             last_error_text = str(exc)
             if retry_idx < 2:
-                messages.append({"role": "assistant", "content": call_res.content})
+                messages.append({"role": "assistant", "content": call_res.content or "{}"})
                 messages.append(
                     {
                         "role": "user",
