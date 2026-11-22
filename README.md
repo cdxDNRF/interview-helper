@@ -45,14 +45,18 @@ flowchart LR
 
 ## 3. 快速启动
 
-### 方式一：一键 Docker Compose（推荐零配置试用）
+### 方式一：Windows 一键快捷启动（双击即可）
+- 双击仓库根目录的 **`start.bat`**：按 `.env` / SQLite 配置启动前后端并自动打开 `http://127.0.0.1:3000`（按 `Enter` 一键关闭全部进程）。
+- 双击 **`start-mock.bat`**：强制开启 `MOCK_MODE=true` 零 API Key 离线演示模式启动。
+
+### 方式二：一键 Docker Compose（零配置容器试用）
 默认开启 `MOCK_MODE=true`（无需 API Key 即可跑通完整流程），SQLite WAL 数据持久化在 `./data`：
 ```powershell
 docker compose up --build
 ```
 访问 `http://127.0.0.1:3000`（若需对接本机中转模型，可在启动时传入 `MOCK_MODE=false` 并在设置页填入接口）。
 
-### 方式二：本地源码启动（开发调试）
+### 方式三：本地手动启动（开发调试）
 ```powershell
 # 1. 启动后端（FastAPI + LangGraph + SQLite WAL）
 cd D:\AIagent\interview-helper\backend
