@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Activity,
   ArrowLeft,
+  BookMarked,
   Download,
   Gauge,
   Loader2,
@@ -151,6 +153,20 @@ export default function ReportPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${reEvaluating ? "animate-spin" : ""}`} />
             重新评分
           </Button>
+          <Link
+            href="/mistakes"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-medium text-amber-300 hover:bg-amber-500/20"
+          >
+            <BookMarked className="h-3.5 w-3.5" />
+            错题本重录
+          </Link>
+          <Link
+            href={`/observability?session=${sessionId}`}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            可观测性
+          </Link>
           <a
             href={getReportExportUrl(sessionId)}
             target="_blank"

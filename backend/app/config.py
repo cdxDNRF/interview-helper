@@ -1,11 +1,13 @@
+import os
 from pathlib import Path
 from typing import Literal
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = REPO_ROOT / "data"
+_HERE = Path(__file__).resolve()
+REPO_ROOT = _HERE.parents[2] if len(_HERE.parents) > 2 and _HERE.parents[1].name == "backend" else _HERE.parents[1]
+DATA_DIR = Path(os.getenv("INTERVIEW_DATA_DIR", str(REPO_ROOT / "data")))
 
 
 class StageLLMSettings(BaseModel):

@@ -1,9 +1,13 @@
 import type {
+  CodeSnapshotPayload,
   ContextResponse,
   EvaluationReportResponse,
   InterviewStateSnapshot,
+  MistakeItemResponse,
+  ObservabilityOverviewResponse,
   SessionDetailResponse,
   SessionListItem,
+  SessionObservabilityResponse,
   SettingsReadResponse,
   TelemetrySummary,
   TurnResponse,
@@ -189,6 +193,7 @@ export async function streamTurn(
     pause_before_ms: number;
     word_timestamps?: unknown[];
     stt_provider_used: string;
+    code_snapshot?: CodeSnapshotPayload | null;
   },
   handlers: StreamTurnHandlers
 ): Promise<void> {
@@ -235,3 +240,34 @@ export async function streamTurn(
     }
   }
 }
+
+export async function listMistakes(status?: "open" | "mastered"): Promise<MistakeItemResponse[]> {
+  const qs = status ? `?status=${status}` : "";
+  return apiJson(`/api/mistakes${qs}`);
+}
+
+export async function getMistake(mistakeId: string): Promise<MistakeItemResponse> {
+  return apiJson(`/api/mistakes/${mistakeId}`);
+}
+
+export async function retryMistake(
+  mistakeId: string,
+  payload: { retry_answer: string; duration_sec: number }
+): Promise<MistakeItemResponse> {
+  return apiJson(`/api/mistakes/${mistakeId}/retry`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getObservabilityOverview(): Promise<ObservabilityOverviewResponse> {
+  return apiJson("/api/observability/overview");
+}
+
+export async function getSessionObservability(
+  sessionId: string
+): Promise<SessionObservabilityResponse> {
+  return apiJson(`/api/observability/sessions/${sessionId}`);
+}
+

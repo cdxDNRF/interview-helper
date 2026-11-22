@@ -2,8 +2,9 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckSquare, Loader2 } from "lucide-react";
+import { CheckSquare, Code2, Loader2 } from "lucide-react";
 
+import { CodingSandboxPanel } from "@/components/interview/CodingSandboxPanel";
 import { CostTelemetryHud } from "@/components/interview/CostTelemetryHud";
 import { LadderTracker } from "@/components/interview/LadderTracker";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ import {
   type SpeechRecognitionLike,
 } from "@/lib/speech";
 import type {
+  CodeSnapshotPayload,
   FourStateIndicator,
   InteractionMode,
   InterviewStateSnapshot,
@@ -58,6 +60,8 @@ export default function InterviewRoomPage() {
   const [submitting, setSubmitting] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showSandbox, setShowSandbox] = useState(false);
+  const [codeSnapshot, setCodeSnapshot] = useState<CodeSnapshotPayload | null>(null);
 
   const sessionStartRef = useRef<number>(0);
   const lastAiDoneRef = useRef<number>(0);
@@ -238,6 +242,7 @@ export default function InterviewRoomPage() {
       let latestAiReply = "";
 
       try {
+        const snapshotToSend = codeSnapshot;
         await streamTurn(
           session.id,
           {
@@ -246,6 +251,7 @@ export default function InterviewRoomPage() {
             timestamp_end_ms: relEnd,
             pause_before_ms: pauseBeforeMs,
             stt_provider_used: sttUsed || (mode === "text" ? "text" : sttProviderConfig),
+            code_snapshot: snapshotToSend,
           },
           {
             onState: (ev) => {
@@ -257,6 +263,7 @@ export default function InterviewRoomPage() {
             },
             onDone: (ev) => {
               setStreamingAiText("");
+              setCodeSnapshot(null);
               setTurns((prev) => [
                 ...prev.filter((t) => t.id !== optimisticUserTurn.id),
                 ev.user_turn,
@@ -280,7 +287,7 @@ export default function InterviewRoomPage() {
         setSubmitting(false);
       }
     },
-    [mode, playAiVoice, session, state, stopAiPlayback, sttProviderConfig, submitting, turns.length]
+    [codeSnapshot, mode, playAiVoice, session, state, stopAiPlayback, sttProviderConfig, submitting, turns.length]
   );
 
   // Hold Spacebar thinking buffer (when not typing inside textarea/input)
@@ -460,6 +467,14 @@ export default function InterviewRoomPage() {
   }
 
   const isCompleted = session.status === "completed" || session.status === "evaluated";
+  const currentTopic =
+    session.prep_plan.topics[
+      Math.min(state.current_topic_idx, Math.max(0, session.prep_plan.topics.length - 1))
+    ];
+  const activeChallenge =
+    currentTopic?.coding_challenge ||
+    session.prep_plan.topics.find((t) => t.coding_challenge)?.coding_challenge ||
+    null;
 
   return (
     <div className="space-y-4">
@@ -472,7 +487,19 @@ export default function InterviewRoomPage() {
           {isCompleted && <Badge variant="purple">本场已结束</Badge>}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={showSandbox ? "default" : "outline"}
+            onClick={() => setShowSandbox((v) => !v)}
+          >
+            <Code2 className="h-3.5 w-3.5" />
+            {showSandbox ? "收起代码沙箱" : "打开 Python 代码沙箱"}
+            {activeChallenge && !showSandbox && (
+              <span className="ml-1 h-2 w-2 rounded-full bg-sky-400" />
+            )}
+          </Button>
           {session.has_report && (
             <Button
               size="sm"
@@ -510,6 +537,15 @@ export default function InterviewRoomPage() {
             audioLevel={audioLevel}
             ttsProviderBadge={ttsBadge}
           />
+
+          {showSandbox && (
+            <CodingSandboxPanel
+              key={activeChallenge?.title || "default"}
+              challenge={activeChallenge}
+              latestSnapshot={codeSnapshot}
+              onSnapshotChange={setCodeSnapshot}
+            />
+          )}
 
           <Card className="p-4">
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">

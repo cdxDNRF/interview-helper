@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: interview-helper-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MOCK_MODE=${MOCK_MODE:-true}
+      - PREP_LLM_BASE_URL=${PREP_LLM_BASE_URL:-http://host.docker.internal:8790/v1}
+      - PREP_LLM_API_KEY=${PREP_LLM_API_KEY:-sk-local}
+      - PREP_LLM_MODEL=${PREP_LLM_MODEL:-gemini/gemini-3.8-flash}
+      - LIVE_LLM_BASE_URL=${LIVE_LLM_BASE_URL:-http://host.docker.internal:8790/v1}
+      - LIVE_LLM_API_KEY=${LIVE_LLM_API_KEY:-sk-local}
+      - LIVE_LLM_MODEL=${LIVE_LLM_MODEL:-gemini/gemini-3.8-flash}
+      - JUDGE_LLM_BASE_URL=${JUDGE_LLM_BASE_URL:-http://host.docker.internal:8790/v1}
+      - JUDGE_LLM_API_KEY=${JUDGE_LLM_API_KEY:-sk-local}
+      - JUDGE_LLM_MODEL=${JUDGE_LLM_MODEL:-gemini/gemini-3.8-flash}
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/interview.db
+      - GITHUB_PROXY=${GITHUB_PROXY:-}
+    volumes:
+      - ./data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://127.0.0.1:8000}
+        NEXT_PUBLIC_PYODIDE_INDEX_URL: ${NEXT_PUBLIC_PYODIDE_INDEX_URL:-}
+    container_name: interview-helper-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped

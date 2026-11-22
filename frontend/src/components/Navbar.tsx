@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AudioWaveform, Settings, Sparkles } from "lucide-react";
+import { Activity, AudioWaveform, BookMarked, Settings, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { getSettings } from "@/lib/api";
@@ -29,7 +29,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link href="/" className="flex items-center gap-2.5 text-zinc-100 hover:opacity-90">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-400 border border-sky-500/30">
               <AudioWaveform className="h-4 w-4" />
@@ -37,16 +37,16 @@ export function Navbar() {
             <span className="font-semibold tracking-tight text-sm sm:text-base">
               interview-helper
             </span>
-            <Badge variant="secondary" className="hidden sm:inline-flex text-[11px]">
-              P0 · Dual-Loop
+            <Badge variant="secondary" className="hidden md:inline-flex text-[11px]">
+              P1 · Sandbox & Retry
             </Badge>
           </Link>
 
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 overflow-x-auto">
             <Link
               href="/"
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs sm:text-sm transition-colors",
+                "rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
                 pathname === "/"
                   ? "bg-zinc-800 text-zinc-100 font-medium"
                   : "text-zinc-400 hover:text-zinc-100"
@@ -55,16 +55,40 @@ export function Navbar() {
               准备台 & 历史
             </Link>
             <Link
+              href="/mistakes"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
+                pathname.startsWith("/mistakes")
+                  ? "bg-zinc-800 text-zinc-100 font-medium"
+                  : "text-zinc-400 hover:text-zinc-100"
+              )}
+            >
+              <BookMarked className="h-3.5 w-3.5" />
+              错题本
+            </Link>
+            <Link
+              href="/observability"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
+                pathname.startsWith("/observability")
+                  ? "bg-zinc-800 text-zinc-100 font-medium"
+                  : "text-zinc-400 hover:text-zinc-100"
+              )}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              可观测性
+            </Link>
+            <Link
               href="/settings"
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs sm:text-sm transition-colors",
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm whitespace-nowrap transition-colors",
                 pathname === "/settings"
                   ? "bg-zinc-800 text-zinc-100 font-medium"
                   : "text-zinc-400 hover:text-zinc-100"
               )}
             >
               <Settings className="h-3.5 w-3.5" />
-              BYOK & 语音设置
+              BYOK 设置
             </Link>
           </nav>
         </div>

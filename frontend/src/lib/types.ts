@@ -60,6 +60,12 @@ export interface GapPoint {
   risk_level: string;
 }
 
+export interface CodingChallenge {
+  title: string;
+  starter_code: string;
+  test_cases_code: string;
+}
+
 export interface PrepTopic {
   topic_id: string;
   title: string;
@@ -67,6 +73,7 @@ export interface PrepTopic {
   target_dimensions: string[];
   atomic_checklist: string[];
   l1_seed_question: string;
+  coding_challenge?: CodingChallenge | null;
 }
 
 export interface PrepPlan {
@@ -127,6 +134,23 @@ export interface TelemetrySummary {
   static_prefix_sha256: string;
 }
 
+export interface CodeSnapshotPayload {
+  language: string;
+  source_code: string;
+  tests_passed: boolean;
+  passed_count: number;
+  total_count: number;
+  test_output: string;
+  exec_time_ms: number;
+}
+
+export interface CodeSubmissionItem extends CodeSnapshotPayload {
+  id: number;
+  turn_index: number;
+  topic_index: number;
+  created_at: string;
+}
+
 export interface SessionDetailResponse {
   id: string;
   context_id: string;
@@ -138,6 +162,7 @@ export interface SessionDetailResponse {
   state: InterviewStateSnapshot;
   telemetry: TelemetrySummary;
   turns: TurnResponse[];
+  code_submissions: CodeSubmissionItem[];
   has_report: boolean;
   started_at: string | null;
   ended_at: string | null;
@@ -212,3 +237,90 @@ export interface EvaluationReportResponse {
   raw_retry_count: number;
   created_at: string;
 }
+
+export interface MistakeRetryRecord {
+  id: number;
+  retry_answer: string;
+  duration_sec: number;
+  retry_score: number;
+  newly_passed_checklist: string[];
+  feedback: string;
+  created_at: string;
+}
+
+export interface MistakeItemResponse {
+  id: string;
+  session_id: string;
+  context_title: string;
+  topic_index: number;
+  topic_title: string;
+  source_entrypoint: string;
+  question_prompt: string;
+  original_answer: string;
+  original_score: number;
+  best_retry_score: number | null;
+  score_delta: number | null;
+  atomic_checklist: string[];
+  ideal_rewrite: string;
+  status: "open" | "mastered";
+  retry_count: number;
+  retries: MistakeRetryRecord[];
+  created_at: string;
+}
+
+export interface StageBreakdownItem {
+  stage: string;
+  call_count: number;
+  prompt_tokens: number;
+  cached_tokens: number;
+  completion_tokens: number;
+  avg_latency_ms: number;
+  p95_latency_ms: number;
+  estimated_cost_cny: number;
+}
+
+export interface UsageLogEntry {
+  id: number;
+  stage: string;
+  model_name: string;
+  prompt_tokens: number;
+  cached_tokens: number;
+  completion_tokens: number;
+  cache_hit_rate: number;
+  latency_ms: number;
+  estimated_cost_cny: number;
+  static_prefix_sha256: string;
+  created_at: string;
+}
+
+export interface SessionTrendPoint {
+  session_id: string;
+  context_title: string;
+  cache_hit_rate: number;
+  estimated_cost_cny: number;
+  avg_latency_ms: number;
+  overall_score: number | null;
+  created_at: string;
+}
+
+export interface ObservabilityOverviewResponse {
+  total_sessions: number;
+  total_llm_calls: number;
+  avg_cache_hit_rate: number;
+  total_cost_cny: number;
+  avg_latency_ms: number;
+  stage_breakdown: StageBreakdownItem[];
+  session_trends: SessionTrendPoint[];
+}
+
+export interface SessionObservabilityResponse {
+  session_id: string;
+  context_title: string;
+  static_prefix_sha256: string;
+  prefix_consistent: boolean;
+  cache_hit_rate: number;
+  total_cost_cny: number;
+  stage_breakdown: StageBreakdownItem[];
+  logs: UsageLogEntry[];
+}
+
