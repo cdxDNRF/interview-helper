@@ -1,0 +1,472 @@
+[
+  {
+    "id": "backend_engineer",
+    "name": "后端开发工程师",
+    "tagline": "高并发、数据库事务、缓存一致性、分布式容错",
+    "icon": "server",
+    "default_jd": "招聘中高级后端开发工程师：精通 Python/Go/Java 异步与高并发架构，深入理解关系型数据库事务与索引、Redis 缓存架构、消息队列与分布式容错限流降级。",
+    "recommended_dimensions": ["technical_depth", "engineering_tradeoffs", "code_and_testing", "problem_structuring"],
+    "hotwords": ["FastAPI", "Go", "MySQL", "InnoDB", "MVCC", "Redis", "Kafka", "P99", "CAS", "Idempotency"],
+    "core_topics": [
+      {
+        "topic_id": "be_concurrency_limiter",
+        "title": "高并发限流与多实例状态同步",
+        "source_entrypoint": "后端网关 · 限流与状态模块",
+        "target_dimensions": ["technical_depth", "code_and_testing"],
+        "atomic_checklist": [
+          "是否对比固定窗口、滑动窗口与令牌桶的突发流量表现",
+          "是否阐明单机内存限流在多实例部署下的配额偏差及 Redis Lua 原子化方案",
+          "是否说明 Redis 不可用时的本地降级兜底策略"
+        ],
+        "l1_seed_question": "讲讲你在后端接口中如何选择限流算法（令牌桶 vs 滑动窗口），多实例部署下状态怎么同步？",
+        "coding_challenge": {
+          "title": "手写内存级滑动窗口限流器（SlideWindowLimiter）",
+          "starter_code": "from collections import deque\n\nclass SlideWindowLimiter:\n    def __init__(self, limit: int, window_sec: float):\n        self.limit = limit\n        self.window_sec = window_sec\n        self._hits: dict[str, deque[float]] = {}\n\n    def allow(self, key: str, now: float) -> bool:\n        # TODO: 清理过期时间戳，若当前窗口内请求数 < limit 则记录并返回 True\n        return False\n",
+          "test_cases_code": "lim = SlideWindowLimiter(limit=2, window_sec=10.0)\nassert lim.allow('u1', 1.0) is True\nassert lim.allow('u1', 2.0) is True\nassert lim.allow('u1', 3.0) is False, '超出限流阈值应拦截'\nassert lim.allow('u1', 11.5) is True, '过期窗口滑出后应放行'\nprint('ALL_TESTS_PASSED: 4/4')\n"
+        }
+      },
+      {
+        "topic_id": "be_db_cache_consistency",
+        "title": "数据库事务与缓存双写一致性",
+        "source_entrypoint": "持久层 · MySQL + Redis",
+        "target_dimensions": ["engineering_tradeoffs", "technical_depth"],
+        "atomic_checklist": [
+          "是否清晰对比 Cache-Aside 先更新库再删缓存与延迟双删的并发竞争窗口",
+          "是否给出 Binlog 异步订阅补偿或分布式锁防击穿的取舍",
+          "是否提及缓存穿透与雪崩的隔离方案"
+        ],
+        "l1_seed_question": "高并发读写场景下，先更新数据库还是先删缓存？怎么解决并发读脏回填？"
+      },
+      {
+        "topic_id": "be_idempotency_mq",
+        "title": "支付/核心写接口幂等性与消息零丢失",
+        "source_entrypoint": "异步链路 · 幂等与 MQ",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否设计唯一请求号 + 状态机 CAS 或唯一索引防重",
+          "是否说明本地消息表/事务消息与消费端幂等去重",
+          "是否覆盖死信队列与积压扩容排查"
+        ],
+        "l1_seed_question": "如果下游网络超时触发客户端重试，核心写接口和 MQ 消费端怎么做到严格幂等且不丢消息？"
+      },
+      {
+        "topic_id": "be_incident_triage",
+        "title": "线上 P99 延迟突刺与死锁排查",
+        "source_entrypoint": "线上稳定性 · 压测与监控",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否按监控分层（CPU/连接池/慢SQL/GC/下游RT）系统化定位瓶颈",
+          "是否识别连接池打满与雪崩级联重试",
+          "是否给出熔断阈值与止血回滚动作"
+        ],
+        "l1_seed_question": "线上某个核心接口突然 P99 从 30ms 飙升到 3 秒并偶发超时，你按什么顺序在 5 分钟内定位并止血？"
+      }
+    ]
+  },
+  {
+    "id": "frontend_fullstack",
+    "name": "前端 / 全栈工程师",
+    "tagline": "React 渲染机制、Next.js App Router、浏览器性能与工程化",
+    "icon": "layout",
+    "default_jd": "招聘中高级前端/全栈工程师：精通 React 19、Next.js App Router、TypeScript 类型系统、浏览器渲染与事件循环、Core Web Vitals (LCP/INP) 调优与全栈 BFF 架构。",
+    "recommended_dimensions": ["technical_depth", "engineering_tradeoffs", "problem_structuring", "code_and_testing"],
+    "hotwords": ["React", "Next.js", "RSC", "Fiber", "Hydration", "LCP", "INP", "WebWorker", "SSE", "TypeScript"],
+    "core_topics": [
+      {
+        "topic_id": "fe_react_fiber_rsc",
+        "title": "React Fiber 调度与 Next.js Server/Client 边界",
+        "source_entrypoint": "前端核心 · React 19 + RSC",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否阐明 Fiber 可中断渲染与双缓冲树机制",
+          "是否说明 RSC 与 Hydration 不匹配的成因及优化边界",
+          "是否给出大列表/高频更新（如流式 SSE）防重渲染手段"
+        ],
+        "l1_seed_question": "说说 React Fiber 为什么能实现可中断渲染？在 Next.js App Router 中你怎么划分 Server Component 与 Client Component 边界？"
+      },
+      {
+        "topic_id": "fe_event_loop_worker",
+        "title": "浏览器事件循环、WebWorker 隔离与内存泄漏排查",
+        "source_entrypoint": "运行时 · EventLoop & Worker",
+        "target_dimensions": ["technical_depth", "code_and_testing"],
+        "atomic_checklist": [
+          "是否说清宏任务、微任务与渲染帧（requestAnimationFrame）执行顺序",
+          "是否给出长任务阻塞主线程时移入 WebWorker 的超时强杀方案",
+          "是否掌握 Heap Snapshot 与 Detached DOM 泄漏定位"
+        ],
+        "l1_seed_question": "浏览器一帧 16.6ms 内宏任务、微任务和 UI 渲染是如何调度的？如果在前端跑重计算或沙箱怎么避免卡死页面？"
+      },
+      {
+        "topic_id": "fe_cwv_perf",
+        "title": "LCP / INP 性能指标优化与流式交互",
+        "source_entrypoint": "性能工程 · Core Web Vitals",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否给出 LCP 首屏关键资源预加载、SSR 流式与代码分割策略",
+          "是否说明 SSE / WebSocket 断线重连与前端状态一致性",
+          "是否用真实监控指标验证优化收益"
+        ],
+        "l1_seed_question": "一个包含编辑器和实时流式输出的页面首屏 LCP 很慢、交互卡顿（INP 高），你怎么系统性排查并优化？"
+      },
+      {
+        "topic_id": "fe_ts_arch",
+        "title": "TypeScript 类型契约与前后端协同防错",
+        "source_entrypoint": "工程化 · Schema & 契约",
+        "target_dimensions": ["code_and_testing", "problem_structuring"],
+        "atomic_checklist": [
+          "是否设计 OpenAPI / Zod 端到端类型校验避免运行时崩溃",
+          "是否覆盖弱网、竞态请求（AbortController）取消机制"
+        ],
+        "l1_seed_question": "在全栈项目里，如何防止前端筛选条件频繁切换导致的旧请求覆盖新结果（竞态）及后端字段变更静默报错？"
+      }
+    ]
+  },
+  {
+    "id": "ai_agent_engineer",
+    "name": "AI Agent / 大模型应用工程师",
+    "tagline": "LangGraph 状态机、Prompt Caching、RAG 混合检索与评测校准",
+    "icon": "bot",
+    "default_jd": "招聘 AI Agent 应用工程师：精通 LLM 工具调用与 LangGraph 编排、Prompt Caching 成本与延迟优化、RAG 混合检索重排、结构化输出可靠性及 LLM-as-a-Judge 评测体系。",
+    "recommended_dimensions": ["technical_depth", "engineering_tradeoffs", "code_and_testing", "problem_structuring"],
+    "hotwords": ["LangGraph", "PromptCaching", "RAG", "BM25", "Rerank", "StructuredOutput", "Pydantic", "TTFT", "Eval"],
+    "core_topics": [
+      {
+        "topic_id": "ai_prompt_cache",
+        "title": "多轮 Agent 的 Prompt Caching 前缀锁定与 Context Rot 治理",
+        "source_entrypoint": "推理工程 · Prefix Caching",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否阐明 KV Cache 前缀匹配原理与禁止在头部放时间戳/UUID/轮次计数的原因",
+          "是否对比全量长上下文缓存与向量 RAG 的成本和召回精度临界点",
+          "是否提出长对话窗口压缩或状态外置防止上下文腐烂"
+        ],
+        "l1_seed_question": "为什么多轮 Agent 中在 System Prompt 里加一个当前时间就会让 Prompt Cache 命中率暴跌？你是怎么设计消息结构保住命中率的？"
+      },
+      {
+        "topic_id": "ai_state_machine",
+        "title": "LangGraph 状态机防漂移与快慢双环编排",
+        "source_entrypoint": "编排引擎 · LangGraph Dual-Loop",
+        "target_dimensions": ["engineering_tradeoffs", "code_and_testing"],
+        "atomic_checklist": [
+          "是否用确定性代码状态机而非纯 Prompt 约束关键流转条件",
+          "是否处理结构化输出（json_schema / json_object）降级与校验重试",
+          "是否考虑思考模型 reasoning_tokens 挤占 max_tokens 导致截断"
+        ],
+        "l1_seed_question": "如何防止多轮对话中 Agent 人设漂移或乱跳流程？如果模型偶发输出不合法 JSON 你怎么兜底？",
+        "coding_challenge": {
+          "title": "实现提取并校验带缓存命中率指标的 LLM Usage 统计器",
+          "starter_code": "def summarize_usage(logs: list[dict]) -> tuple[int, int, float]:\n    \"\"\"返回 (total_prompt, total_cached, cache_hit_rate)，兼容 cached_tokens 与 prompt_cache_hit_tokens\"\"\"\n    # TODO\n    return 0, 0, 0.0\n",
+          "test_cases_code": "sample = [\n    {'prompt_tokens': 1000, 'prompt_cache_hit_tokens': 800},\n    {'prompt_tokens': 1000, 'prompt_tokens_details': {'cached_tokens': 600}},\n]\np, c, rate = summarize_usage(sample)\nassert p == 2000 and c == 1400\nassert abs(rate - 0.7) < 1e-6\nassert summarize_usage([]) == (0, 0, 0.0)\nprint('ALL_TESTS_PASSED: 3/3')\n"
+        }
+      },
+      {
+        "topic_id": "ai_rag_hybrid",
+        "title": "企业级 RAG 混合检索、切分与幻觉抑制",
+        "source_entrypoint": "知识检索 · BM25 + Vector + Rerank",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否阐明 BM25 对专有名词精确匹配与稠密向量的互补关系",
+          "是否包含 Cross-Encoder Rerank 与引用溯源防幻觉机制",
+          "是否说明检索评测指标（Recall@K / MRR / Faithfulness）"
+        ],
+        "l1_seed_question": "纯向量检索在代码库或专有名词场景经常漏召回，你会怎么设计混合检索与重排流水线？"
+      },
+      {
+        "topic_id": "ai_judge_eval",
+        "title": "LLM-as-a-Judge 评测校准与防分数虚高",
+        "source_entrypoint": "评测工程 · Rubric & Calibration",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否使用正交维度 + 二元原子核查清单替代整体直觉打分",
+          "是否强制先输出证据引用再打分，且未考维度允许 null",
+          "是否建立离线回归样本集监控改 Prompt 后的分数波动"
+        ],
+        "l1_seed_question": "让大模型直接打 0-100 分经常分数虚高且不稳定，你怎么做 Rubric 工程和回归校验保证评分客观？"
+      }
+    ]
+  },
+  {
+    "id": "algorithm_engineer",
+    "name": "算法与数据结构工程师",
+    "tagline": "高频数据结构、动态规划/图论、复杂度压榨与 Pyodide 现场手撕",
+    "icon": "binary",
+    "default_jd": "招聘算法/基础研发工程师：扎实的算法与数据结构功底，能够现场编写无 Bug 的高质量 Python 代码，分析时间/空间复杂度并覆盖空输入、重复元素、大规模数据等边界。",
+    "recommended_dimensions": ["code_and_testing", "technical_depth", "problem_structuring", "engineering_tradeoffs"],
+    "hotwords": ["LRU", "Trie", "Dijkstra", "DP", "BinarySearch", "MonotonicStack", "Complexity"],
+    "core_topics": [
+      {
+        "topic_id": "algo_lru_cache",
+        "title": "手写 O(1) LRU 缓存及其并发/工程变体",
+        "source_entrypoint": "数据结构 · 哈希表 + 双向链表",
+        "target_dimensions": ["code_and_testing", "technical_depth"],
+        "atomic_checklist": [
+          "是否阐明哈希表定位 + 双向链表 O(1) 移动与淘汰逻辑",
+          "是否覆盖容量为 0/1 与重复 put 同 key 刷新顺序的边界",
+          "能否讨论分段锁或 LRU-K 防止扫描污染"
+        ],
+        "l1_seed_question": "请先口述 O(1) LRU Cache 的数据结构设计，然后在右侧沙箱完成编码并跑通单测。",
+        "coding_challenge": {
+          "title": "手写严格 O(1) 时间复杂度的 LRUCache（禁用 OrderedDict）",
+          "starter_code": "class Node:\n    def __init__(self, k=0, v=0):\n        self.k, self.v = k, v\n        self.prev = self.next = None\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cap = capacity\n        self.cache = {}\n        self.head, self.tail = Node(), Node()\n        self.head.next, self.tail.prev = self.tail, self.head\n\n    def get(self, key: int) -> int:\n        # TODO\n        return -1\n\n    def put(self, key: int, value: int) -> None:\n        # TODO\n        pass\n",
+          "test_cases_code": "lru = LRUCache(2)\nlru.put(1, 10)\nlru.put(2, 20)\nassert lru.get(1) == 10\nlru.put(3, 30)  # evicts key 2\nassert lru.get(2) == -1\nlru.put(1, 100) # update existing\nassert lru.get(1) == 100\nprint('ALL_TESTS_PASSED: 3/3')\n"
+        }
+      },
+      {
+        "topic_id": "algo_sliding_window",
+        "title": "滑动窗口 / 单调队列的均摊复杂度证明",
+        "source_entrypoint": "算法范式 · 双指针与单调性",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否证明每个元素至多入队出队各一次达到 O(N)",
+          "是否清楚单调队列维护极值窗口的弹出条件"
+        ],
+        "l1_seed_question": "为什么单调队列求滑动窗口最大值能把复杂度从 O(NK) 降到 O(N)？如何证明不存在重复回溯？"
+      },
+      {
+        "topic_id": "algo_graph_toposort",
+        "title": "DAG 拓扑排序与任务依赖环检测",
+        "source_entrypoint": "图论应用 · Kahn 算法 / DFS 三色标记",
+        "target_dimensions": ["code_and_testing", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否对比入度表 BFS 与三色 DFS 检测环的优劣",
+          "是否说明并行任务调度下如何输出分层执行序"
+        ],
+        "l1_seed_question": "如果工作流节点存在依赖关系，你怎么判断是否有环并生成可并行执行的拓扑批次？"
+      },
+      {
+        "topic_id": "algo_dp_optimization",
+        "title": "动态规划状态压缩与空间权衡",
+        "source_entrypoint": "优化技巧 · 滚动数组与记忆化",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否明确状态定义、转移方程与初始边界",
+          "是否解释滚动数组降维时遍历顺序（正序 vs 逆序）的约束"
+        ],
+        "l1_seed_question": "0-1 背包与完全背包在一维滚动数组优化时，内层循环遍历顺序为什么相反？"
+      }
+    ]
+  },
+  {
+    "id": "system_architect",
+    "name": "系统架构师（System Design）",
+    "tagline": "千万级高可用、秒杀/IM 系统设计、分库分表与异地容灾",
+    "icon": "network",
+    "default_jd": "招聘资深架构师：主导大规模分布式系统设计（IM 即时通讯、秒杀交易、短链、Feed 流），精通容量估算、读写分离与分库分表、热点隔离、多活容灾与一致性权衡。",
+    "recommended_dimensions": ["engineering_tradeoffs", "problem_structuring", "technical_depth"],
+    "hotwords": ["QPS", "Sharding", "Snowflake", "ConsistentHashing", "CQRS", "Saga", "Multi-Active", "Backpressure"],
+    "core_topics": [
+      {
+        "topic_id": "sys_seckill",
+        "title": "10万 QPS 秒杀系统：防超卖与热点隔离架构",
+        "source_entrypoint": "高并发交易 · 流量漏斗与库存扣减",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否先澄清读写比、库存量与一致性容忍度",
+          "是否采用 CDN/网关限流 -> Redis 原子扣减 -> MQ 异步落库的流量漏斗",
+          "是否处理热点单品缓存分片或本地扣减与少卖/超卖对账"
+        ],
+        "l1_seed_question": "设计一个支撑 10 万 QPS 的秒杀系统，怎么防止库存超卖同时不把数据库打挂？"
+      },
+      {
+        "topic_id": "sys_im_push",
+        "title": "千万级在线 IM 系统：长连接接入与群消息扩散",
+        "source_entrypoint": "实时通讯 · 读扩散 vs 写扩散",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否对比大群读扩散与小群写扩散的写放大和读延迟权衡",
+          "是否给出递增 Seq ID 保证离线消息不丢不乱序",
+          "是否说明长连接网关有状态路由与优雅重连风暴防护"
+        ],
+        "l1_seed_question": "微信/钉钉这类 IM 系统，10 人小群和 5000 人大群的消息收发为什么不能只用一种扩散模型？"
+      },
+      {
+        "topic_id": "sys_sharding",
+        "title": "百亿级订单表分库分表与平滑扩容",
+        "source_entrypoint": "数据架构 · Sharding & 迁移",
+        "target_dimensions": ["engineering_tradeoffs", "technical_depth"],
+        "atomic_checklist": [
+          "是否设计带基因的分片键满足买家与卖家双维度查询（或 ES/异构索引）",
+          "是否给出双写校验灰度切换的不停机扩容步骤"
+        ],
+        "l1_seed_question": "订单表按 user_id 分表后，商家按 shop_id 查列表怎么解决？如果要从 8 库扩到 16 库怎么不停机迁移？"
+      },
+      {
+        "topic_id": "sys_disaster_recovery",
+        "title": "跨机房多活与弱依赖雪崩兜底",
+        "source_entrypoint": "高可用 · 异地多活 & 舱壁隔离",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否区分同城双活与异地多活跨城延迟（RTT）对强一致写的影响",
+          "是否设计线程池/信号量舱壁隔离与降级开关"
+        ],
+        "l1_seed_question": "如果两个跨城机房之间专线抖动延迟飙到 200ms，你这套多活架构怎么避免跨机房同步调用把两个机房一起拖垮？"
+      }
+    ]
+  },
+  {
+    "id": "sre_cloud_native",
+    "name": "SRE / 云原生运维工程师",
+    "tagline": "Kubernetes 调度排障、Linux 内核/网络诊断、可观测性与混沌工程",
+    "icon": "cloud",
+    "default_jd": "招聘 SRE / 云原生平台工程师：深入理解 Linux 内核与网络协议栈、Kubernetes 控制面与 Pod 生命周期、Prometheus/OpenTelemetry 可观测性体系与线上故障应急止血。",
+    "recommended_dimensions": ["problem_structuring", "technical_depth", "engineering_tradeoffs"],
+    "hotwords": ["Kubernetes", "etcd", "Pod", "OOMKilled", "CNI", "eBPF", "Prometheus", "SLO", "Drain"],
+    "core_topics": [
+      {
+        "topic_id": "sre_k8s_pod",
+        "title": "Pod 卡在 Terminating / CrashLoopBackOff 与 OOMKilled 排障",
+        "source_entrypoint": "K8s 运行时 · kubelet & cgroup",
+        "target_dimensions": ["problem_structuring", "technical_depth"],
+        "atomic_checklist": [
+          "是否说清 cgroup 内存统计包含 PageCache 与 RSS 的区别及 OOM 触发机制",
+          "是否了解优雅停机 preStop、SIGTERM 与 endpoints 摘除异步竞争",
+          "是否提及 Finalizer 阻塞 Terminating 的排查方法"
+        ],
+        "l1_seed_question": "生产环境 Pod 频繁报 OOMKilled 或发布时出现少量 502，你如何从 cgroup、preStop 和 kube-proxy 链路定位原因？"
+      },
+      {
+        "topic_id": "sre_linux_net",
+        "title": "Linux 网络丢包与 TIME_WAIT/半连接队列打满排查",
+        "source_entrypoint": "OS 网络 · netstat / tcpdump / ss",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否区分 SYN 半连接队列（tcp_max_syn_backlog）与 Accept 全连接队列（somaxconn）",
+          "是否掌握 ss/netstat/ethtool/tcpdump 分层排查流程"
+        ],
+        "l1_seed_question": "高并发短连接服务出现大量连接超时，怎么排查是半连接/全连接队列溢出、端口耗尽还是网卡软中断瓶颈？"
+      },
+      {
+        "topic_id": "sre_observability",
+        "title": "SLI/SLO 错误预算与高基数指标爆炸治理",
+        "source_entrypoint": "可观测性 · Metrics/Logs/Traces",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否说明高基数 Label（如 user_id）打挂 Prometheus TSDB 的危害与治理",
+          "是否给出尾部采样（Tail Sampling）控制全链路 Tracing 存储成本"
+        ],
+        "l1_seed_question": "Prometheus 内存突然暴涨崩溃，通常是什么引发的高基数爆炸？全链路 Tracing 流量很大怎么采样既省钱又不漏异常请求？"
+      },
+      {
+        "topic_id": "sre_etcd_split",
+        "title": "etcd 集群脑裂与控制面过载降级",
+        "source_entrypoint": "K8s 控制面 · etcd Raft",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否清楚 etcd 多数派 quorum 机制与磁盘 fsync 延迟对心跳的致命影响",
+          "是否说明大对象写入或 list-watch 风暴的限流手段"
+        ],
+        "l1_seed_question": "为什么强烈禁止把 etcd 跑在共享普通云盘上？如果 etcd 出现大量 leader election 抖动，现有业务 Pod 会受什么影响？"
+      }
+    ]
+  },
+  {
+    "id": "qa_sdet",
+    "name": "测试开发 / QA 工程师",
+    "tagline": "测试金字塔、Pytest/Playwright 自动化、压测模型与质量门禁",
+    "icon": "shield",
+    "default_jd": "招聘测试开发工程师：精通分层自动化测试架构、Mock/Stub 契约测试、全链路压测与性能瓶颈定位、异常故障注入及 CI/CD 发布质量门禁建设。",
+    "recommended_dimensions": ["code_and_testing", "problem_structuring", "engineering_tradeoffs"],
+    "hotwords": ["Pytest", "Playwright", "Mock", "ContractTest", "Locust", "Chaos", "FlakyTest", "Coverage"],
+    "core_topics": [
+      {
+        "topic_id": "qa_flaky_mock",
+        "title": "外部依赖 Mock 隔离与脆弱测试（Flaky Test）治理",
+        "source_entrypoint": "自动化框架 · Pytest & E2E",
+        "target_dimensions": ["code_and_testing", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否区分真外部集成测试与 Mock/契约测试边界",
+          "是否治理异步等待、时间依赖与测试间数据库污染造成的 Flaky"
+        ],
+        "l1_seed_question": "如果一个 AI 应用重度依赖外部大模型 API 和数据库，你怎么设计 CI 测试体系保证既测出真实缺陷又不被外部抖动拖垮？"
+      },
+      {
+        "topic_id": "qa_load_test",
+        "title": "全链路压测模型与拐点分析",
+        "source_entrypoint": "性能测试 · 吞吐与 RT 拐点",
+        "target_dimensions": ["problem_structuring", "technical_depth"],
+        "atomic_checklist": [
+          "是否设计阶梯加压识别吞吐饱和与 RT 陡增拐点",
+          "是否注意压测数据隔离（影子表/压测标记）防止污染生产账务"
+        ],
+        "l1_seed_question": "压测报告里并发数翻倍时 TPS 不升反降、错误率飙升，你怎么协同研发判断瓶颈在压测机自身、连接池还是下游锁竞争？"
+      },
+      {
+        "topic_id": "qa_boundary_cases",
+        "title": "复杂状态机与金融/并发边界用例设计",
+        "source_entrypoint": "质量设计 · 并发竞态 & 幂等",
+        "target_dimensions": ["code_and_testing", "problem_structuring"],
+        "atomic_checklist": [
+          "是否覆盖重复提交、乱序回调、超时与状态回滚边界",
+          "能否设计确定性回归样本集防范模型/策略退化"
+        ],
+        "l1_seed_question": "针对带异步回调和状态机流转的系统，除了正常路径，你会构造哪些并发或异常边界测试用例？"
+      },
+      {
+        "topic_id": "qa_ci_gate",
+        "title": "质量门禁与灰度发布可观测拦截",
+        "source_entrypoint": "发布防线 · Canary & 回滚",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否结合上线后黄金指标（错误率/P99/业务转化）触发自动回滚",
+          "是否平衡 CI 卡点耗时与研发交付效率"
+        ],
+        "l1_seed_question": "如果单测跑得慢导致研发抱怨流水线太长，你会怎么分层设计 PR 门禁、夜间回归与灰度监控防线？"
+      }
+    ]
+  },
+  {
+    "id": "data_engineer",
+    "name": "数据工程 / 大数据开发工程师",
+    "tagline": "流批一体、Flink/Spark 数据倾斜治理、数仓建模与一致性",
+    "icon": "database",
+    "default_jd": "招聘数据工程师：精通离线与实时数仓建模、Spark/Flink 数据倾斜调优、Exactly-Once 语义保障、Kafka 积压治理与列式存储（Parquet/Iceberg）查询优化。",
+    "recommended_dimensions": ["technical_depth", "engineering_tradeoffs", "problem_structuring"],
+    "hotwords": ["Flink", "Spark", "Checkpoint", "Watermark", "DataSkew", "Iceberg", "Parquet", "Kafka", "OLAP"],
+    "core_topics": [
+      {
+        "topic_id": "de_data_skew",
+        "title": "Spark / Flink 数据倾斜根因定位与两阶段聚合解法",
+        "source_entrypoint": "计算引擎 · Shuffle & Salting",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否识别 NULL/默认热点 Key 及大表 Join 大表的 Shuffle 倾斜",
+          "是否能讲清加盐打散（两阶段聚合）与 Broadcast Join 适用条件"
+        ],
+        "l1_seed_question": "作业跑到 99% 卡死通常是数据倾斜。除了加内存，你在 Spark/Flink 里怎么按 Join 和 GroupBy 两类场景彻底消除倾斜？"
+      },
+      {
+        "topic_id": "de_exactly_once",
+        "title": "Flink Checkpoint、Watermark 迟到数据与端到端 Exactly-Once",
+        "source_entrypoint": "实时计算 · Chandy-Lamport & 2PC",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否讲清 Barrier 对齐（与非对齐 Unaligned）对反压的影响",
+          "是否阐明 Source 重置偏移 + Sink 幂等/两阶段提交才构成端到端精确一次"
+        ],
+        "l1_seed_question": "Flink 开了 Checkpoint 就一定能保证端到端 Exactly-Once 吗？如果下游 Sink 是 MySQL 或 Kafka 分别需要注意什么？"
+      },
+      {
+        "topic_id": "de_lakehouse",
+        "title": "湖仓一体（Iceberg/Hudi）小文件合并与点查加速",
+        "source_entrypoint": "存储层 · Parquet & Compaction",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否指出流式高频写入产生海量小文件导致 NameNode/元数据膨胀问题",
+          "是否利用异步 Compaction、Z-Order/分区裁剪降低读取扫描量"
+        ],
+        "l1_seed_question": "实时流写数据湖最容易产生大量小文件导致查询变慢，怎么在不影响实时写入的前提下做 Compaction 治理？"
+      },
+      {
+        "topic_id": "de_warehouse_modeling",
+        "title": "维度建模、拉链表与数据质量对账",
+        "source_entrypoint": "数仓架构 · ODS/DWD/DWS/ADS",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否合理使用拉链表（SCD Type 2）兼顾历史快照追溯与存储成本",
+          "是否建立空值、波动率与主键重复的数据质量拦截"
+        ],
+        "l1_seed_question": "海量缓慢变化维（如用户等级/商品价格）用全量日快照还是拉链表？如果上游业务漏推一天数据怎么无痛重跑回溯？"
+      }
+    ]
+  }
+]

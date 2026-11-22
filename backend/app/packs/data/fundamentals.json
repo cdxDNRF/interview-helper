@@ -1,0 +1,233 @@
+[
+  {
+    "id": "network",
+    "name": "计算机网络",
+    "category": "CS 核心基础",
+    "summary": "TCP 握手挥手与拥塞控制、HTTP/2 多路复用与 HTTP/3 QUIC、TLS 1.3 与负载均衡",
+    "hotwords": ["TCP", "SYN", "TIME_WAIT", "BBR", "HTTP2", "QUIC", "TLS1.3", "DNS", "CDN"],
+    "core_topics": [
+      {
+        "topic_id": "net_tcp_handshake",
+        "title": "TCP 三次握手、四次挥手与 TIME_WAIT 工程影响",
+        "source_entrypoint": "计算机网络 · 传输层协议",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否讲清三次握手防止历史重复连接初始化及同步双端 Seq 的原因",
+          "是否解释 TIME_WAIT 存在 2MSL 的双重作用",
+          "是否给出短连接高并发下 TIME_WAIT 过多导致端口耗尽的工程解法（Keep-Alive/连接池）"
+        ],
+        "l1_seed_question": "别只背过程：为什么 TCP 建立连接必须三次握手而不是两次？主动关闭方出现大量 TIME_WAIT 会有什么真实故障？"
+      },
+      {
+        "topic_id": "net_http_versions",
+        "title": "HTTP/1.1 队头阻塞、HTTP/2 多路复用与 QUIC (HTTP/3)",
+        "source_entrypoint": "计算机网络 · 应用层演进",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否指出 HTTP/2 解决了应用层队头阻塞但仍受限于底层 TCP 队头阻塞",
+          "是否阐明 QUIC 基于 UDP 独立流控与 0-RTT 建连优势（以及弱网音视频对比 WebRTC）"
+        ],
+        "l1_seed_question": "HTTP/2 已经做了多路复用，为什么在弱网丢包下反而可能比多个 HTTP/1.1 连接更卡，最终还要演进到基于 UDP 的 HTTP/3？"
+      }
+    ]
+  },
+  {
+    "id": "os",
+    "name": "操作系统",
+    "category": "CS 核心基础",
+    "summary": "进程/线程/协程、虚拟内存与缺页中断、epoll 与 io_uring、零拷贝技术",
+    "hotwords": ["epoll", "io_uring", "mmap", "sendfile", "PageFault", "TLB", "ContextSwitch", "Deadlock"],
+    "core_topics": [
+      {
+        "topic_id": "os_io_multiplexing",
+        "title": "select / poll / epoll 与协程非阻塞 IO 调度机制",
+        "source_entrypoint": "操作系统 · IO 多路复用",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否对比 select O(N) 轮询与 epoll 红黑树 + 就绪链表回调",
+          "是否区分 LT（水平触发）与 ET（边缘触发）必须配合非阻塞 IO 读尽缓冲区的原因",
+          "是否理解 epoll 与异步任务（asyncio/Go netpoller）的配合"
+        ],
+        "l1_seed_question": "为什么 epoll 在连接数多且活跃度低时远胜 select？如果使用 ET 模式，代码里一次没把数据读完会发生什么？"
+      },
+      {
+        "topic_id": "os_zero_copy_mem",
+        "title": "虚拟内存、缺页中断与零拷贝（sendfile / mmap）",
+        "source_entrypoint": "操作系统 · 内存与文件 IO",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否说明传统 read+write 的 4 次拷贝与 4 次上下文切换",
+          "是否讲清 sendfile/DMA Gather 消减 CPU 拷贝的适用场景与局限"
+        ],
+        "l1_seed_question": "Kafka 和静态文件服务器为什么吞吐这么高？对比一下传统 read/write 和 mmap、sendfile 的内存拷贝路径差异。"
+      }
+    ]
+  },
+  {
+    "id": "mysql",
+    "name": "MySQL 与事务内核",
+    "category": "数据存储八股",
+    "summary": "InnoDB B+ 树索引与回表、事务隔离级别与 MVCC、Undo/Redo/Binlog 与死锁排查",
+    "hotwords": ["InnoDB", "B+Tree", "MVCC", "ReadView", "RedoLog", "UndoLog", "GapLock", "2PC"],
+    "core_topics": [
+      {
+        "topic_id": "db_bplus_index",
+        "title": "InnoDB B+ 树结构、聚簇索引与联合索引失效场景",
+        "source_entrypoint": "MySQL · 索引与执行计划",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否从磁盘页 I/O 次数和范围扫描解释 B+ 树胜过哈希和红黑树的原因",
+          "是否讲清聚簇索引回表、覆盖索引与最左前缀匹配边界",
+          "是否提及隐式类型转换、函数计算等真实索引失效案例"
+        ],
+        "l1_seed_question": "为什么 InnoDB 主键推荐自增趋势 ID 而不推荐随机 UUID？联合索引 (a, b, c) 什么情况下会走索引下推或半截失效？"
+      },
+      {
+        "topic_id": "db_mvcc_locks",
+        "title": "MVCC、幻读治理（间隙锁）与 Redo/Binlog 两阶段提交",
+        "source_entrypoint": "MySQL · 事务一致性",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否说清快照读依靠 ReadView + Undo Log 版本链，当前读依靠 Next-Key Lock",
+          "是否解释为何 RR 隔离级别仍可能因快照读转当前读踩中幻读",
+          "是否阐明 Redo Log 与 Binlog 两阶段提交防主从/崩溃不一致"
+        ],
+        "l1_seed_question": "MySQL 可重复读（RR）下到底有没有彻底解决幻读？如果先快照读再更新同一范围，会发生什么反直觉现象？"
+      }
+    ]
+  },
+  {
+    "id": "redis_mq",
+    "name": "Redis 与消息队列",
+    "category": "缓存与中间件",
+    "summary": "Redis 单线程模型与数据结构、持久化 RDB/AOF、缓存故障防护与 Kafka 架构",
+    "hotwords": ["Redis", "SkipList", "AOF", "RDB", "Kafka", "ISR", "Partition", "BloomFilter"],
+    "core_topics": [
+      {
+        "topic_id": "redis_core",
+        "title": "Redis 单线程高性能原理、ZSet 跳表与大 Key 阻塞治理",
+        "source_entrypoint": "Redis · 内存引擎",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否讲清纯内存 + IO 多路复用 + Redis 6+ 多线程网络 IO 读写分担",
+          "是否对比 ZSet 选择跳表而非红黑树在范围查询与实现复杂度上的优势",
+          "是否给出 BigKey/HotKey 在线拆分与渐进式删除（UNLINK）方案"
+        ],
+        "l1_seed_question": "既然 Redis 主执行线程是单线程，为什么 QPS 能轻松破十万？如果业务不小心写进了一个百万元素的 Hash BigKey 怎么平滑清理？"
+      },
+      {
+        "topic_id": "mq_kafka_reliability",
+        "title": "Kafka 分区顺序、ISR 副本同步与积压消费治理",
+        "source_entrypoint": "消息队列 · Kafka",
+        "target_dimensions": ["engineering_tradeoffs", "problem_structuring"],
+        "atomic_checklist": [
+          "是否配置 acks=all + min.insync.replicas + 手动提交 offset 保障零丢失",
+          "是否说明同分区有序性在重试（max.in.flight.requests）时的乱序隐患",
+          "是否给出消息积压时临时扩容中转 Topic 的应急办法"
+        ],
+        "l1_seed_question": "Kafka 想要同时满足「不丢消息」和「同一订单状态消息严格有序」，生产者、Broker 和消费者端分别要配什么？"
+      }
+    ]
+  },
+  {
+    "id": "runtime_concurrency",
+    "name": "语言运行时与并发模型",
+    "category": "编程语言底层",
+    "summary": "Python GIL/asyncio/GC、Go GMP 调度与 Channel、Java JMM/G1/AQS 原理",
+    "hotwords": ["GIL", "asyncio", "GMP", "Goroutine", "Channel", "JMM", "volatile", "AQS", "GC"],
+    "core_topics": [
+      {
+        "topic_id": "rt_async_concurrency",
+        "title": "Python asyncio / Go GMP / 线程协程并发陷阱",
+        "source_entrypoint": "运行时并发 · 协程调度",
+        "target_dimensions": ["technical_depth", "code_and_testing"],
+        "atomic_checklist": [
+          "是否解释 Python GIL 对 CPU 密集型多线程的限制及多进程/C扩展/asyncio 适用面",
+          "是否指出在 async 协程中调用同步阻塞库（如 requests / time.sleep）会卡死整个事件循环",
+          "能否说明协程/线程并发下的竞态锁粒度与内存泄漏"
+        ],
+        "l1_seed_question": "为什么在 FastAPI 的 async def 接口里不小心调用了同步的 requests.get，整个服务的并发吞吐会瞬间雪崩？",
+        "coding_challenge": {
+          "title": "使用 asyncio 信号量实现带最大并发限制的异步批量执行器",
+          "starter_code": "import asyncio\n\nasync def bounded_gather(tasks_coros: list, max_concurrency: int) -> list:\n    \"\"\"限制同时执行的协程数不超过 max_concurrency，并按原顺序返回结果\"\"\"\n    # TODO\n    return []\n",
+          "test_cases_code": "import asyncio\n\nasync def run_check():\n    active = 0\n    peak = 0\n    async def job(i):\n        nonlocal active, peak\n        active += 1\n        peak = max(peak, active)\n        await asyncio.sleep(0.01)\n        active -= 1\n        return i * 2\n    res = await bounded_gather([job(i) for i in range(6)], max_concurrency=2)\n    assert res == [0, 2, 4, 6, 8, 10], f'结果顺序或值错误: {res}'\n    assert peak <= 2, f'并发数超限: {peak}'\n    print('ALL_TESTS_PASSED: 2/2')\n\nasyncio.run(run_check())\n"
+        }
+      },
+      {
+        "topic_id": "rt_gc_memory",
+        "title": "分代/三色标记 GC 与对象引用循环泄漏排查",
+        "source_entrypoint": "运行时内存 · GC 与泄漏",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否解释引用计数无法处理循环引用及分代/三色标记 + 写屏障的 STW 控制",
+          "是否掌握内存持续增长时的采样工具排查路径"
+        ],
+        "l1_seed_question": "解释一下三色标记垃圾回收中为什么需要「写屏障（Write Barrier）」来防止并发标记下的漏标问题？"
+      }
+    ]
+  },
+  {
+    "id": "distributed",
+    "name": "分布式系统与微服务",
+    "category": "分布式核心",
+    "summary": "CAP/PACELC 定理、Raft 共识、分布式锁安全边界与分布式事务 TCC/Saga",
+    "hotwords": ["CAP", "Raft", "FencingToken", "Redlock", "etcd", "TCC", "Saga", "CircuitBreaker"],
+    "core_topics": [
+      {
+        "topic_id": "dist_lock_safety",
+        "title": "分布式锁的时钟漂移、GC 停顿与 Fencing Token 防护",
+        "source_entrypoint": "分布式协调 · Redis vs etcd",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否点出单纯 Redis SET NX EX 在主从异步复制与客户端长 GC 停顿下的锁失效风险",
+          "是否给出 Watchdog 自动续期 + 存储层 Fencing Token 单调递增版本号校验",
+          "是否对比基于 Raft 的 etcd/ZK 强一致锁与 Redis AP 锁的取舍"
+        ],
+        "l1_seed_question": "线程 A 拿到 Redis 分布式锁后发生长时间 STW/卡顿导致锁过期，线程 B 随即拿锁并写库，A 醒来后怎么防止把 B 的数据覆盖掉？"
+      },
+      {
+        "topic_id": "dist_cap_raft",
+        "title": "CAP / PACELC 权衡与 Raft 选主脑裂治理",
+        "source_entrypoint": "共识算法 · Raft",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否强调网络分区必然存在，CAP 本质是在 P 发生时权衡 C 与 A（正常无 P 时 PACELC 权衡延迟与一致性）",
+          "是否说明 Raft 多数派提交与 Pre-Vote 防网络恢复节点扰动"
+        ],
+        "l1_seed_question": "为什么说分布式系统只能选 CP 或 AP 而几乎没有 CA？Raft 里一个节点断网恢复后为什么可能触发无谓的全局重新选主？"
+      }
+    ]
+  },
+  {
+    "id": "llm_fundamentals",
+    "name": "大模型与 AI Infra 八股",
+    "category": "AI 核心原理",
+    "summary": "Transformer Self-Attention、KV Cache 显存推导、RoPE/FlashAttention 与微调对齐",
+    "hotwords": ["Transformer", "SelfAttention", "KVCache", "GQA", "RoPE", "FlashAttention", "LoRA", "DPO"],
+    "core_topics": [
+      {
+        "topic_id": "llm_kv_cache",
+        "title": "KV Cache 原理、显存开销计算与 GQA/PagedAttention 优化",
+        "source_entrypoint": "大模型推理 · 显存与吞吐",
+        "target_dimensions": ["technical_depth", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否解释 Prefill（计算瓶颈）与 Decode（访存瓶颈）两阶段差异",
+          "能否写出单 token KV Cache 显存公式（2 × layers × kv_heads × head_dim × bytes）",
+          "是否阐明 GQA 减少 KV 头数与 PagedAttention 消除显存碎片的机制"
+        ],
+        "l1_seed_question": "大模型自回归解码时为什么必须开 KV Cache？为什么随着上下文变长，推理服务往往先爆显存带宽而不是算力？"
+      },
+      {
+        "topic_id": "llm_align_lora",
+        "title": "LoRA 低秩微调与 SFT / RLHF(PPO) / DPO 对比",
+        "source_entrypoint": "大模型训练 · 高效微调与对齐",
+        "target_dimensions": ["technical_depth", "problem_structuring"],
+        "atomic_checklist": [
+          "是否说清 LoRA 旁路低秩矩阵 AB 初始化（A 高斯 B 全零）与推理零额外延迟合并",
+          "是否对比 DPO 省去独立 Reward Model 相比 PPO 的稳定性与离线分布限制"
+        ],
+        "l1_seed_question": "LoRA 微调时为什么矩阵 A 用随机初始化而矩阵 B 必须全零初始化？什么时候该做 SFT/DPO，什么时候优先做 RAG 或 Prompt 工程？"
+      }
+    ]
+  }
+]

@@ -15,7 +15,7 @@ frontend/tsconfig.tsbuildinfo
 .env
 backend/.env
 frontend/.env.local
-data/
+/data/
 *.db
 *.db-wal
 *.db-shm

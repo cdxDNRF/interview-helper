@@ -1,0 +1,81 @@
+[
+  {
+    "id": "general_behavioral",
+    "name": "复杂项目攻坚与技术分歧（STAR）",
+    "summary": "考察个人真实贡献、跨团队冲突协调与高难度问题推进闭环",
+    "core_topics": [
+      {
+        "topic_id": "gen_star_challenge",
+        "title": "最具挑战的技术攻坚经历（STAR 深度核验）",
+        "source_entrypoint": "通用行为面 · 个人贡献与结果量化",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否清晰交代背景目标与受限约束（Situation & Task）",
+          "是否剥离团队光环、明确说明「我个人」做了哪些关键技术决策（Action）",
+          "是否给出可验证的量化成果与事后反思（Result）"
+        ],
+        "l1_seed_question": "请讲一段你职业/项目生涯中最棘手、或者差点做不出来的技术攻坚经历，当时卡点是什么、你个人具体做了什么？"
+      },
+      {
+        "topic_id": "gen_team_conflict",
+        "title": "跨团队意见分歧与说服推动",
+        "source_entrypoint": "通用行为面 · 沟通影响力",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "是否站在对方业务/运维诉求理解分歧根源，而非情绪化争执",
+          "是否用基准测试数据、灰度验证或 ROI 权衡达成共识",
+          "是否能复盘如果重来有哪些沟通改进空间"
+        ],
+        "l1_seed_question": "当你坚持的技术改造方案和业务方/同事的排期或架构意见发生激烈冲突时，你是怎么处理并推动落地的？"
+      }
+    ]
+  },
+  {
+    "id": "incident_ownership",
+    "name": "线上故障复盘与抗压担当",
+    "summary": "考察面对突发事故时的冷静止血、责任担当与体系化防重演",
+    "core_topics": [
+      {
+        "topic_id": "gen_mistake_postmortem",
+        "title": "线上事故 / 重大失误复盘与防重演建设",
+        "source_entrypoint": "通用行为面 · Ownership 与复盘",
+        "target_dimensions": ["problem_structuring", "technical_depth"],
+        "atomic_checklist": [
+          "是否诚实承担责任而不是把锅甩给外部依赖或测试",
+          "是否区分「当下止血动作」与「根因治理机制（非仅仅“以后小心”）」",
+          "是否体现面对高压反馈时的情绪稳定与结构化表达"
+        ],
+        "l1_seed_question": "讲一次因为你的设计疏漏或上线变更引发故障/返工的经历，当时怎么止血的？事后建了什么机制确保团队不再踩同一个坑？"
+      }
+    ]
+  },
+  {
+    "id": "career_reverse_qa",
+    "name": "快速学习适应与面试官反问演练",
+    "summary": "考察面对未知领域迁移学习方法、职业规划自洽性以及高水准反问能力",
+    "core_topics": [
+      {
+        "topic_id": "gen_fast_learning",
+        "title": "陌生技术栈快速上手与排雷方法论",
+        "source_entrypoint": "通用行为面 · 学习迁移能力",
+        "target_dimensions": ["problem_structuring"],
+        "atomic_checklist": [
+          "是否给出从官方文档/源码/最小 PoC 到生产落地的方法论",
+          "是否举出自己快速攻克陌生技术的真实例子"
+        ],
+        "l1_seed_question": "如果入职后让你一周内接手一个完全陌生的语言或核心遗产系统，你前三天和第一周分别怎么推进？"
+      },
+      {
+        "topic_id": "gen_reverse_qa",
+        "title": "候选人反问环节演练（终面加分项）",
+        "source_entrypoint": "通用行为面 · 团队洞察与反问",
+        "target_dimensions": ["problem_structuring", "engineering_tradeoffs"],
+        "atomic_checklist": [
+          "反问是否聚焦技术挑战、业务痛点或团队工程文化而非浅层福利八卦",
+          "是否展现对目标岗位核心目标的提前思考"
+        ],
+        "l1_seed_question": "假设现在到了真实面试最后的反问环节，我是你的业务技术负责人，你最想向我了解哪两个问题？"
+      }
+    ]
+  }
+]
